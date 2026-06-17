@@ -1,0 +1,63 @@
+<svg
+  width="512"
+  height="512"
+  viewBox="0 0 512 512"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <defs>
+    <linearGradient id="orbitGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C026D3" />
+      <stop offset="100%" stop-color="#7C3AED" />
+    </linearGradient>
+  </defs>
+
+  <!-- Orbit Ring -->
+  <circle
+    cx="256"
+    cy="256"
+    r="150"
+    fill="none"
+    stroke="url(#orbitGradient)"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-dasharray="1 18"
+  />
+
+  <!-- Pentagon -->
+  <polygon
+    points="256,85 325,135 298,215 214,215 187,135"
+    fill="none"
+    stroke="#06B6D4"
+    stroke-width="16"
+    stroke-linejoin="round"
+    stroke-linecap="round"
+  />
+
+  <!-- Hexagon -->
+  <polygon
+    points="130,245 190,280 190,350 130,385 70,350 70,280"
+    fill="none"
+    stroke="#0891B2"
+    stroke-width="16"
+    stroke-linejoin="round"
+    stroke-linecap="round"
+  />
+
+  <!-- Squircle -->
+  <rect
+    x="285"
+    y="245"
+    width="120"
+    height="120"
+    rx="38"
+    fill="none"
+    stroke="#D946EF"
+    stroke-width="16"
+  />
+
+  <!-- Orbit Nodes -->
+  <circle cx="256" cy="106" r="8" fill="#C026D3"/>
+  <circle cx="386" cy="330" r="8" fill="#A855F7"/>
+  <circle cx="126" cy="330" r="8" fill="#7C3AED"/>
+
+</svg>
