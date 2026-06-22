@@ -5,6 +5,7 @@ import type { ChatMessage, PendingAction, SSEDonePayload, ToolCall, ToolResult }
 
 export type StreamEvent =
   | { type: 'thinking' }
+  | { type: 'thinking_chunk';       content: string }
   | { type: 'thinking_content';     content: string }
   | { type: 'token';                chunk: string }
   | { type: 'tool_call';            tool: ToolCall }
@@ -73,6 +74,9 @@ export function useChatStream({ onEvent }: UseChatStreamOptions) {
         switch (parsed.type) {
           case 'thinking':
             onEvent({ type: 'thinking' })
+            break
+          case 'thinking_chunk':
+            onEvent({ type: 'thinking_chunk', content: (parsed.content as string) ?? '' })
             break
           case 'thinking_content':
             onEvent({ type: 'thinking_content', content: (parsed.content as string) ?? '' })

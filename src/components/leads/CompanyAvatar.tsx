@@ -16,11 +16,17 @@ function colorForDomain(domain: string) {
 interface CompanyAvatarProps {
   domain: string
   name: string
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xxs' | 'xs'
 }
 
-const SIZE = { sm: 'w-8 h-8 text-xs', md: 'w-10 h-10 text-sm', lg: 'w-12 h-12 text-base' }
-const IMG_SIZE = { sm: 32, md: 40, lg: 48 }
+const SIZE = {
+  xxs: 'w-5 h-5 text-[10px]',
+  xs: 'w-6 h-6 text-[10px]',
+  sm: 'w-8 h-8 text-xs',
+  md: 'w-10 h-10 text-sm',
+  lg: 'w-12 h-12 text-base',
+}
+const IMG_SIZE = { xxs: 16, xs: 24, sm: 32, md: 40, lg: 48 }
 
 export default function CompanyAvatar({ domain, name, size = 'md' }: CompanyAvatarProps) {
   const [src, setSrc] = useState(`https://logo.clearbit.com/${domain}`)
@@ -37,14 +43,14 @@ export default function CompanyAvatar({ domain, name, size = 'md' }: CompanyAvat
 
   if (failed) {
     return (
-      <div className={`${SIZE[size]} ${colorForDomain(domain)} rounded-xl flex items-center justify-center flex-shrink-0`}>
+      <div className={`${SIZE[size]} ${colorForDomain(domain)} rounded-xl flex items-center justify-center flex-shrink-0 ring-1 ring-stone-300 dark:ring-stone-600`}>
         <span className="text-white font-semibold leading-none">{initials}</span>
       </div>
     )
   }
 
   return (
-    <div className={`${SIZE[size]} rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-zinc-800`}>
+    <div className={`${SIZE[size]} rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-zinc-800 ring-1 ring-stone-300 dark:ring-stone-600`}>
       <img
         src={src}
         alt={name}

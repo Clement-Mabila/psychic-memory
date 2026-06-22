@@ -60,6 +60,12 @@ export function isAuthenticated() {
   return !!Cookies.get('access_token')
 }
 
+// ── Leads ─────────────────────────────────────────────────────────────────
+export const leadApi = {
+  getDetail: (id: string)                            => api.get(`/leads/${id}`).then(r => r.data),
+  update:    (id: string, data: Record<string, any>) => api.patch(`/leads/${id}/update`, data).then(r => r.data),
+}
+
 // ── Vault ──────────────────────────────────────────────────────────────────
 export const vaultApi = {
   getStats:    () => api.get('/vault/stats').then(r => r.data),

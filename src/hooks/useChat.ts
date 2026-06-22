@@ -40,6 +40,17 @@ export function useChat() {
           })
           break
 
+        case 'thinking_chunk':
+          // Append each token to thinking_content in real-time; keep thinking:true (model still reasoning)
+          setMessages(prev => {
+            const last = prev[prev.length - 1]
+            if (last?.id === streamingIdRef.current) {
+              return [...prev.slice(0, -1), { ...last, thinking_content: (last.thinking_content ?? '') + event.content }]
+            }
+            return prev
+          })
+          break
+
         case 'thinking_content':
           setMessages(prev => {
             const last = prev[prev.length - 1]

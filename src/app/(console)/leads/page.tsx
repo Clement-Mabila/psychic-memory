@@ -14,8 +14,10 @@ import LeadCard from '@/components/leads/LeadCard'
 import LeadTable from '@/components/leads/LeadTable'
 import GroupPickerModal from '@/components/leads/GroupPickerModal'
 import PortfolioDiscoveryModal from '@/components/leads/PortfolioDiscoveryModal'
-import CorporateGroupsView from '@/components/leads/CorporateGroupsView'
+import GroupKanbanView from '@/components/leads/GroupKanbanView'
+import GroupTableView from '@/components/leads/GroupTableView'
 import CreateGroupModal from '@/components/leads/CreateGroupModal'
+import LeadDetailModal from '@/components/leads/LeadDetailModal'
 
 const STAGES = [
   'raw_signal','discovery','research','contact',
@@ -225,7 +227,7 @@ const KANBAN_COLUMNS: { id: string; label: string; colour: string }[] = [
 // ─── Kanban scrollable column ────────────────────────────────────────────────
 function KanbanColumn({
   col, leads, loading,
-  runStatus, onRun, onRerun, onRunOnly, isPendingRun, selected, onSelect, onSetGroup,
+  runStatus, onRun, onRerun, onRunOnly, isPendingRun, selected, onSelect, onOpen, onSetGroup,
 }: {
   col: { id: string; label: string; colour: string }
   leads: any[]
@@ -237,6 +239,7 @@ function KanbanColumn({
   isPendingRun: (id: string) => boolean
   selected: Set<string>
   onSelect: (id: string) => void
+  onOpen: (id: string) => void
   onSetGroup: (id: string) => void
 }) {
   const [limit, setLimit] = useState(15)
@@ -304,6 +307,7 @@ function KanbanColumn({
                   onRunOnly={onRunOnly}
                   selected={selected.has(lead.id)}
                   onSelect={onSelect}
+                  onOpen={onOpen}
                   onSetGroup={onSetGroup}
                 />
               ))}
@@ -327,7 +331,8 @@ function KanbanColumn({
 
 export default function LeadsPage() {
   const qc = useQueryClient()
-  const [view,     setView]     = useState<ViewMode>('kanban')
+  const [view,          setView]          = useState<ViewMode>('kanban')
+  const [groupViewMode, setGroupViewMode] = useState<'kanban' | 'table'>('kanban')
   const [search,   setSearch]   = useState('')
   const [vertical, setVertical] = useState('')
   const [stage,    setStage]    = useState('')
@@ -335,9 +340,10 @@ export default function LeadsPage() {
   const [page,     setPage]     = useState(1)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [runStatus, setRunStatus] = useState<Record<string, string>>({})
-  const [groupPickerLeadId, setGroupPickerLeadId] = useState<string | null>(null)
+  const [groupPickerLeadId,  setGroupPickerLeadId]  = useState<string | null>(null)
   const [showPortfolioModal, setShowPortfolioModal] = useState(false)
-  const [showCreateGroup, setShowCreateGroup]     = useState(false)
+  const [showCreateGroup,    setShowCreateGroup]     = useState(false)
+  const [detailLeadId,       setDetailLeadId]        = useState<string | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['leads', search, vertical, stage, hasGroup, page],
@@ -444,6 +450,30 @@ export default function LeadsPage() {
               {label}
             </button>
           ))}
+
+          {view === 'groups' && (
+            <>
+              <div className="w-px h-5 bg-slate-200 dark:bg-slate-700 mx-1 self-center" />
+              {(['kanban', 'table'] as const).map(m => {
+                const Icon = m === 'kanban' ? LayoutGrid : Table2
+                return (
+                  <button
+                    key={m}
+                    onClick={() => setGroupViewMode(m)}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-colors font-normal',
+                      groupViewMode === m
+                        ? 'bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-slate-100'
+                        : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800'
+                    )}
+                  >
+                    <Icon size={14} />
+                    {m === 'kanban' ? 'Board' : 'Table'}
+                  </button>
+                )
+              })}
+            </>
+          )}
         </div>
 
         {/* Right: search + filters */}
@@ -452,7 +482,7 @@ export default function LeadsPage() {
             <button
               onClick={() => setShowCreateGroup(true)}
               title="New Parent Company"
-              className="h-9 w-9 rounded-2xl bg-indigo-600 hover:bg-indigo-700 flex items-center justify-center transition-colors"
+              className="h-9 w-9 rounded-2xl bg-cyan-500 hover:bg-cyan-600 flex items-center justify-center transition-colors"
             >
               <PlusCircle className="h-4 w-4 text-white" />
             </button>
@@ -523,6 +553,7 @@ export default function LeadsPage() {
               isPendingRun={id => runMutation.isPending && runMutation.variables === id}
               selected={selected}
               onSelect={toggleSelect}
+              onOpen={id => setDetailLeadId(id)}
               onSetGroup={id => setGroupPickerLeadId(id)}
             />
           ))}
@@ -543,6 +574,7 @@ export default function LeadsPage() {
             onRun={id => runMutation.mutate(id)}
             onRerun={(id, from) => rerunMutation.mutate({ leadId: id, from })}
             onRunOnly={(id, agentType) => runOnlyMutation.mutate({ leadId: id, agentType })}
+            onOpen={id => setDetailLeadId(id)}
             onSetGroup={id => setGroupPickerLeadId(id)}
           />
           <div className="px-4 py-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
@@ -567,8 +599,19 @@ export default function LeadsPage() {
       )}
 
       {/* ── GROUPS VIEW ──────────────────────────────────────────────────────── */}
-      {view === 'groups' && (
-        <CorporateGroupsView search={search} />
+      {view === 'groups' && groupViewMode === 'kanban' && (
+        <GroupKanbanView
+          search={search}
+          onOpen={id => setDetailLeadId(id)}
+          onSetGroup={id => setGroupPickerLeadId(id)}
+        />
+      )}
+      {view === 'groups' && groupViewMode === 'table' && (
+        <GroupTableView
+          search={search}
+          onOpen={id => setDetailLeadId(id)}
+          onSetGroup={id => setGroupPickerLeadId(id)}
+        />
       )}
 
       {/* ── LIST VIEW (kept for data parity, hidden in nav) ───────────────────── */}
@@ -675,6 +718,17 @@ export default function LeadsPage() {
           />
         )
       })()}
+
+      {/* ── Lead detail modal ────────────────────────────────────────────────── */}
+      {detailLeadId && (
+        <LeadDetailModal
+          leadId={detailLeadId}
+          onClose={() => setDetailLeadId(null)}
+          onRun={id => { runMutation.mutate(id); setDetailLeadId(null) }}
+          onRerun={(id, from) => { rerunMutation.mutate({ leadId: id, from }); setDetailLeadId(null) }}
+          onRunOnly={(id, agentType) => { runOnlyMutation.mutate({ leadId: id, agentType }); setDetailLeadId(null) }}
+        />
+      )}
 
     </div>
   )

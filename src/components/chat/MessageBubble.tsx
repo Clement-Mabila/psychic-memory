@@ -1,6 +1,6 @@
 'use client'
-import { useState, useEffect } from 'react'
-import { AlertTriangle, ChevronDown, ChevronRight, Brain } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { AlertTriangle, ChevronDown } from 'lucide-react'
 import { StreamingMessage } from './StreamingMessage'
 import { ToolCallIndicator } from './ToolCallIndicator'
 import type { ChatMessage, ToolCall } from '@/types/chat'
@@ -27,24 +27,81 @@ function getPhaseKey(toolCalls?: ToolCall[]): string {
   return 'default'
 }
 
-function ThinkingIndicator({ toolCalls }: { toolCalls?: ToolCall[] }) {
-  const phaseKey = getPhaseKey(toolCalls)
-  const phrases  = PHASE_PHRASES[phaseKey]
-  const [idx, setIdx] = useState(0)
+// ── Combined thinking section — Claude-style collapsible ─────────────────────
+function ThinkingSection({
+  active,
+  content,
+  toolCalls,
+}: {
+  active: boolean
+  content?: string
+  toolCalls?: ToolCall[]
+}) {
+  const [open, setOpen]   = useState(false)
+  const phaseKey          = getPhaseKey(toolCalls)
+  const phrases           = PHASE_PHRASES[phaseKey]
+  const [idx, setIdx]     = useState(0)
+  const scrollRef         = useRef<HTMLDivElement>(null)
 
   useEffect(() => { setIdx(0) }, [phaseKey])
+
+  // Cycle phrases while thinking
   useEffect(() => {
+    if (!active) return
     const t = setInterval(() => setIdx(i => (i + 1) % phrases.length), 1500)
     return () => clearInterval(t)
-  }, [phrases.length])
+  }, [active, phrases.length])
+
+  // Auto-open when thinking starts so user sees the panel immediately
+  useEffect(() => { if (active) setOpen(true) }, [active])
+
+  // Auto-scroll reasoning content as it grows
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+  }, [content])
+
+  const label = active ? phrases[idx] : 'Thought'
 
   return (
-    <div className="flex items-center gap-2.5 py-1">
-      <div className="relative shrink-0 w-6 h-6">
-        <div className="absolute inset-0 rounded-full bg-blue-400/40 blur-md animate-pulse scale-150" />
-        <img src="/Logo.svg" alt="" className="relative w-6 h-6" />
-      </div>
-      <span className="text-sm text-slate-400 dark:text-neutral-500">{phrases[idx]}</span>
+    <div>
+      {/* Header — same visual language as existing ThinkingIndicator */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-2 py-0.5 group"
+      >
+        <div className="relative shrink-0 w-5 h-5">
+          {active && (
+            <div className="absolute inset-0 rounded-full bg-blue-400/40 blur-md animate-pulse scale-150" />
+          )}
+          <img src="/Logo.svg" alt="" className="relative w-5 h-5" />
+        </div>
+        <span className="text-sm text-slate-400 dark:text-neutral-500">{label}</span>
+        <ChevronDown
+          size={12}
+          className={`text-slate-300 dark:text-neutral-600 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {/* Reasoning body */}
+      {open && (
+        <div className="mt-1.5 rounded-xl bg-stone-50 dark:bg-neutral-900 border border-stone-100 dark:border-neutral-800 p-3">
+          {content ? (
+            <div
+              ref={scrollRef}
+              className="max-h-52 overflow-y-auto scrollbar-none font-mono text-[11px] text-slate-400 dark:text-neutral-500 leading-relaxed whitespace-pre-wrap break-words"
+            >
+              {content}
+              {active && (
+                <span className="inline-block w-1.5 h-3 bg-blue-400 animate-pulse ml-0.5 align-middle" />
+              )}
+            </div>
+          ) : (
+            <p className="font-mono text-[11px] text-slate-300 dark:text-neutral-600">
+              {active ? 'Reasoning…' : '—'}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -56,9 +113,8 @@ interface MessageBubbleProps {
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser  = message.role === 'user'
   const isError = !!message.error
-  const [reasoningOpen, setReasoningOpen] = useState(false)
 
-  // ── User message: right-aligned pill, no avatar ───────────────────────────
+  // ── User message: right-aligned pill ─────────────────────────────────────
   if (isUser) {
     return (
       <div className="flex justify-end">
@@ -69,7 +125,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     )
   }
 
-  // ── Assistant message: free text, no avatar, no bubble ───────────────────
+  // ── Assistant message: free text, no bubble ───────────────────────────────
   return (
     <div className="flex flex-col gap-2 w-full">
       {/* Tool calls */}
@@ -79,36 +135,16 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         streaming={message.streaming}
       />
 
-      {/* Thinking indicator */}
-      {message.thinking && !message.content && (
-        <ThinkingIndicator toolCalls={message.tool_calls} />
+      {/* Thinking — single collapsible section for both active and done states */}
+      {(message.thinking || message.thinking_content) && (
+        <ThinkingSection
+          active={!!message.thinking}
+          content={message.thinking_content}
+          toolCalls={message.tool_calls}
+        />
       )}
 
-      {/* Qwen3 chain-of-thought — collapsible reasoning panel */}
-      {message.thinking_content && (
-        <div className="rounded-xl border border-violet-100 dark:border-violet-900/40 bg-violet-50/50 dark:bg-violet-950/20 overflow-hidden">
-          <button
-            onClick={() => setReasoningOpen(v => !v)}
-            className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-violet-50 dark:hover:bg-violet-950/30 transition-colors"
-          >
-            <Brain size={12} className="text-violet-400 dark:text-violet-500 shrink-0" />
-            <span className="text-[11px] font-medium text-violet-500 dark:text-violet-400 flex-1">Reasoning</span>
-            {reasoningOpen
-              ? <ChevronDown  size={12} className="text-violet-400 dark:text-violet-500" />
-              : <ChevronRight size={12} className="text-violet-400 dark:text-violet-500" />
-            }
-          </button>
-          {reasoningOpen && (
-            <div className="px-3 pb-3 pt-1 border-t border-violet-100 dark:border-violet-900/40">
-              <pre className="text-[11px] text-slate-500 dark:text-neutral-400 whitespace-pre-wrap break-words font-mono leading-relaxed">
-                {message.thinking_content}
-              </pre>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Content — plain free text, no bubble */}
+      {/* Content */}
       {(message.content || (message.streaming && !message.thinking)) && (
         isError && !message.content ? (
           <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
@@ -129,7 +165,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           <span>{message.error}</span>
         </div>
       )}
-
     </div>
   )
 }

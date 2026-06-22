@@ -119,11 +119,12 @@ interface LeadCardProps {
   onRunOnly: (id: string, agentType: string) => void
   selected?: boolean
   onSelect: (id: string) => void
+  onOpen?: (id: string) => void
   onSetGroup?: (id: string) => void
 }
 
 export default function LeadCard({
-  lead, runStatus, onRun, onRerun, onRunOnly, selected, onSelect, onSetGroup,
+  lead, runStatus, onRun, onRerun, onRunOnly, selected, onSelect, onOpen, onSetGroup,
 }: LeadCardProps) {
   const score    = lead.qualification_score
   const tier      = lead.priority_tier ?? ''
@@ -157,7 +158,7 @@ export default function LeadCard({
         'bg-white dark:bg-zinc-900 rounded-2xl p-4 cursor-pointer group relative transition-shadow hover:shadow-sm dark:shadow-none',
         selected && 'ring-2 ring-indigo-400 dark:ring-indigo-500'
       )}
-      onClick={() => onSelect(lead.id)}
+      onClick={() => onOpen ? onOpen(lead.id) : onSelect(lead.id)}
     >
       {/* ── Top row: badges + CRM + menu ── */}
       <div className="flex items-start justify-between mb-3">

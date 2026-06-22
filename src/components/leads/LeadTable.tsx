@@ -138,10 +138,11 @@ interface LeadTableProps {
   onRun: (id: string) => void
   onRerun: (id: string, from: string) => void
   onRunOnly: (id: string, agentType: string) => void
+  onOpen?: (id: string) => void
   onSetGroup?: (id: string) => void
 }
 
-export default function LeadTable({ leads, isLoading, selected, onToggleAll, onToggleSelect, onRun, onRerun, onRunOnly, onSetGroup }: LeadTableProps) {
+export default function LeadTable({ leads, isLoading, selected, onToggleAll, onToggleSelect, onRun, onRerun, onRunOnly, onOpen, onSetGroup }: LeadTableProps) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -179,13 +180,15 @@ export default function LeadTable({ leads, isLoading, selected, onToggleAll, onT
             return (
               <tr
                 key={lead.id}
+                onClick={() => onOpen?.(lead.id)}
                 className={cn(
                   'border-b border-slate-100 dark:border-neutral-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors',
-                  selected.has(lead.id) && 'bg-indigo-50 dark:bg-indigo-950/40'
+                  selected.has(lead.id) && 'bg-indigo-50 dark:bg-indigo-950/40',
+                  onOpen && 'cursor-pointer'
                 )}
               >
                 {/* Checkbox */}
-                <td className="px-4 py-4">
+                <td className="px-4 py-4" onClick={e => e.stopPropagation()}>
                   <input type="checkbox" checked={selected.has(lead.id)} onChange={() => onToggleSelect(lead.id)} className="cursor-pointer" />
                 </td>
 
@@ -269,7 +272,7 @@ export default function LeadTable({ leads, isLoading, selected, onToggleAll, onT
                 </td>
 
                 {/* Actions */}
-                <td className="px-2 py-4">
+                <td className="px-2 py-4" onClick={e => e.stopPropagation()}>
                   <ActionsMenu lead={lead} onRun={onRun} onRerun={onRerun} onRunOnly={onRunOnly} onSetGroup={onSetGroup} />
                 </td>
               </tr>
