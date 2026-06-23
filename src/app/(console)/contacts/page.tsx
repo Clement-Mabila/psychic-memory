@@ -6,10 +6,12 @@ import { Search, Table2, Mail } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import api from '@/lib/api'
 
-import { ContactsTable, sortContacts } from '@/components/contacts/ContactsTable'
-import { EmailsView }                  from '@/components/contacts/EmailsView'
-import { FiltersButton }               from '@/components/contacts/FiltersButton'
+import { ContactsTable, sortContacts }   from '@/components/contacts/ContactsTable'
+import { EmailsView }                    from '@/components/contacts/EmailsView'
+import { FiltersButton }                 from '@/components/contacts/FiltersButton'
+import { EmailIntelligencePanel }        from '@/components/contacts/EmailIntelligencePanel'
 import type {
+  Contact,
   ContactsResponse,
   FiltersState,
   SortField,
@@ -85,6 +87,7 @@ const DEFAULT_FILTERS: FiltersState = {
 export default function ContactsPage() {
   const queryClient = useQueryClient()
 
+  const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [viewMode,   setViewMode]   = useState<'table' | 'emails'>('table')
   const [search,     setSearch]     = useState('')
   const [filters,    setFilters]    = useState<FiltersState>(DEFAULT_FILTERS)
@@ -174,6 +177,19 @@ export default function ContactsPage() {
     onError:   () => setBulkState('failed'),
   })
 
+  if (selectedContact) {
+    return (
+      <EmailIntelligencePanel
+        contact={selectedContact}
+        onClose={() => setSelectedContact(null)}
+        onContactUpdated={(updated) => {
+          setSelectedContact(updated)
+          handleResolved(updated.id)
+        }}
+      />
+    )
+  }
+
   return (
     <div className="p-8 space-y-6">
 
@@ -259,6 +275,7 @@ export default function ContactsPage() {
           onResolved={handleResolved}
           onBulkVerify={() => bulkVerifyMutation.mutate()}
           onBulkClear={() => setSelected(new Set())}
+          onRowClick={setSelectedContact}
         />
       )}
     </div>

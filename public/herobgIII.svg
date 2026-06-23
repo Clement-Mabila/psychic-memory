@@ -1,0 +1,251 @@
+<svg width="881" height="188" viewBox="0 0 881 188" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Base background -->
+    <linearGradient id="bg" x1="0" y1="0" x2="881" y2="188" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0EA5B7"/>
+      <stop offset="38%" stop-color="#0891B2"/>
+      <stop offset="72%" stop-color="#0F766E"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+
+    <!-- Ambient overlays -->
+    <radialGradient id="ambientLeft" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+      gradientTransform="translate(180 42) rotate(35) scale(330 180)">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.18"/>
+      <stop offset="48%" stop-color="#CFFAFE" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#CFFAFE" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="ambientCenter" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+      gradientTransform="translate(430 38) rotate(12) scale(250 145)">
+      <stop offset="0%" stop-color="#A5F3FC" stop-opacity="0.12"/>
+      <stop offset="55%" stop-color="#67E8F9" stop-opacity="0.07"/>
+      <stop offset="100%" stop-color="#67E8F9" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Right main glass shape -->
+    <linearGradient id="rightShape" x1="565" y1="15" x2="790" y2="188" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ECFEFF" stop-opacity="0.96"/>
+      <stop offset="35%" stop-color="#CFFAFE" stop-opacity="0.82"/>
+      <stop offset="100%" stop-color="#22D3EE" stop-opacity="0.08"/>
+    </linearGradient>
+
+    <!-- Inner right glass layer -->
+    <linearGradient id="rightInnerShape" x1="635" y1="35" x2="820" y2="188" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.36"/>
+      <stop offset="45%" stop-color="#ECFEFF" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#ECFEFF" stop-opacity="0.02"/>
+    </linearGradient>
+
+    <!-- Left ribbon -->
+    <linearGradient id="leftRibbon" x1="80" y1="0" x2="250" y2="188" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#A5F3FC" stop-opacity="0"/>
+      <stop offset="48%" stop-color="#A5F3FC" stop-opacity="0.24"/>
+      <stop offset="100%" stop-color="#A5F3FC" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Center ribbon -->
+    <linearGradient id="centerRibbon" x1="360" y1="0" x2="450" y2="188" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#A5F3FC" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#CFFAFE" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#CFFAFE" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Right edge stroke -->
+    <linearGradient id="rightEdge" x1="560" y1="25" x2="660" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Data line -->
+    <linearGradient id="flowStroke" x1="130" y1="118" x2="650" y2="72" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#CFFAFE" stop-opacity="0.04"/>
+      <stop offset="30%" stop-color="#E0F2FE" stop-opacity="0.14"/>
+      <stop offset="55%" stop-color="#FFFFFF" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="#CFFAFE" stop-opacity="0.08"/>
+    </linearGradient>
+
+    <!-- Node glow -->
+    <radialGradient id="nodeGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+      gradientTransform="translate(0 0) scale(1)">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9"/>
+      <stop offset="35%" stop-color="#CFFAFE" stop-opacity="0.65"/>
+      <stop offset="100%" stop-color="#67E8F9" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Bottom fade -->
+    <linearGradient id="bottomFade" x1="0" y1="138" x2="0" y2="188" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#02131A" stop-opacity="0.12"/>
+    </linearGradient>
+
+    <!-- Subtle top-left bloom -->
+    <radialGradient id="topBloom" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+      gradientTransform="translate(110 10) rotate(18) scale(220 90)">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.14"/>
+      <stop offset="45%" stop-color="#CFFAFE" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#CFFAFE" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Grid pattern -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#FFFFFF" stroke-opacity="0.06" stroke-width="1"/>
+    </pattern>
+
+    <!-- Grid fade mask -->
+    <linearGradient id="gridFade" x1="0" y1="0" x2="560" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="white" stop-opacity="0.9"/>
+      <stop offset="70%" stop-color="white" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+    <mask id="gridMask">
+      <rect x="0" y="0" width="560" height="188" fill="url(#gridFade)"/>
+    </mask>
+
+    <filter id="blurSoft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16"/>
+    </filter>
+
+    <filter id="blurLarge" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="24"/>
+    </filter>
+
+    <filter id="flowGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2.5"/>
+    </filter>
+
+    <filter id="nodeBlur" x="-200%" y="-200%" width="400%" height="400%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="881" height="188" fill="url(#bg)"/>
+
+  <!-- Subtle enterprise grid -->
+  <rect x="0" y="0" width="560" height="188" fill="url(#grid)" mask="url(#gridMask)" opacity="0.42"/>
+
+  <!-- Ambient light -->
+  <ellipse cx="190" cy="50" rx="290" ry="150" fill="url(#ambientLeft)"/>
+  <ellipse cx="435" cy="42" rx="220" ry="120" fill="url(#ambientCenter)"/>
+  <ellipse cx="120" cy="12" rx="220" ry="90" fill="url(#topBloom)"/>
+
+  <!-- Left soft ribbon -->
+  <path
+    d="M86 188
+       C98 150 116 108 135 70
+       C153 35 181 2 216 -18
+       C235 -28 252 -20 248 2
+       C242 32 214 63 193 97
+       C170 135 156 165 148 188
+       Z"
+    fill="url(#leftRibbon)"
+    filter="url(#blurLarge)"
+  />
+
+  <!-- Center vertical ribbon -->
+  <path
+    d="M384 188
+       C374 154 376 124 387 96
+       C399 66 413 42 411 14
+       C409 -5 423 -8 436 10
+       C448 28 445 58 433 86
+       C421 116 408 148 404 188
+       Z"
+    fill="url(#centerRibbon)"
+    filter="url(#blurSoft)"
+  />
+
+  <!-- Data flow line glow -->
+  <path
+    d="M132 118
+       C220 98 290 92 362 100
+       C438 108 520 94 592 76
+       C635 66 676 58 724 62"
+    stroke="url(#flowStroke)"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    fill="none"
+    filter="url(#flowGlow)"
+    opacity="0.9"
+  />
+
+  <!-- Crisp data flow line -->
+  <path
+    d="M132 118
+       C220 98 290 92 362 100
+       C438 108 520 94 592 76
+       C635 66 676 58 724 62"
+    stroke="url(#flowStroke)"
+    stroke-width="1.2"
+    stroke-linecap="round"
+    fill="none"
+    opacity="0.95"
+  />
+
+  <!-- Nodes -->
+  <!-- node 1 -->
+  <circle cx="214" cy="103" r="10" fill="url(#nodeGlow)" filter="url(#nodeBlur)" opacity="0.55"/>
+  <circle cx="214" cy="103" r="2.6" fill="#E6FFFB" opacity="0.85"/>
+
+  <!-- node 2 -->
+  <circle cx="370" cy="100" r="12" fill="url(#nodeGlow)" filter="url(#nodeBlur)" opacity="0.58"/>
+  <circle cx="370" cy="100" r="3" fill="#F8FFFF" opacity="0.9"/>
+
+  <!-- node 3 -->
+  <circle cx="560" cy="83" r="10" fill="url(#nodeGlow)" filter="url(#nodeBlur)" opacity="0.52"/>
+  <circle cx="560" cy="83" r="2.4" fill="#E6FFFB" opacity="0.85"/>
+
+  <!-- node 4 -->
+  <circle cx="704" cy="61" r="12" fill="url(#nodeGlow)" filter="url(#nodeBlur)" opacity="0.58"/>
+  <circle cx="704" cy="61" r="3" fill="#FFFFFF" opacity="0.92"/>
+
+  <!-- Right clean organic glass shape -->
+  <path
+    d="M565 188
+       C575 145 603 104 646 60
+       C690 16 743 -8 800 -8
+       L881 -8
+       L881 188
+       Z"
+    fill="url(#rightShape)"
+  />
+
+  <!-- Right inner glass layer -->
+  <path
+    d="M650 188
+       C658 152 682 118 717 83
+       C748 52 787 30 835 22
+       L881 18
+       L881 188
+       Z"
+    fill="url(#rightInnerShape)"
+    opacity="0.9"
+  />
+
+  <!-- Right highlight edge -->
+  <path
+    d="M568 188
+       C578 147 605 107 647 64
+       C679 32 714 10 748 0"
+    stroke="url(#rightEdge)"
+    stroke-width="2"
+    stroke-linecap="round"
+    opacity="0.7"
+  />
+
+  <!-- Inner edge accent -->
+  <path
+    d="M655 188
+       C664 154 686 122 719 89
+       C744 64 775 44 809 34"
+    stroke="#FFFFFF"
+    stroke-opacity="0.16"
+    stroke-width="1.2"
+    stroke-linecap="round"
+    fill="none"
+  />
+
+  <!-- Bottom depth -->
+  <rect x="0" y="136" width="881" height="52" fill="url(#bottomFade)"/>
+</svg>

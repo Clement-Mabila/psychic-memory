@@ -3,18 +3,20 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import {
   MoreVertical, RefreshCw, ExternalLink,
-  Loader2, X, Check, ShieldCheck, Mail,
+  Loader2, X, Check, ShieldCheck, Mail, Cpu,
 } from 'lucide-react'
 import api from '@/lib/api'
-import { GenerateEmailModal } from './GenerateEmailModal'
+import { GenerateEmailModal }      from './GenerateEmailModal'
 import type { Contact, RowAction } from './types'
 
 export function RowActions({
   contact,
   onResolved,
+  onOpenPanel,
 }: {
   contact: Contact
   onResolved: (id: string) => void
+  onOpenPanel: (c: Contact) => void
 }) {
   const [open,           setOpen]           = useState(false)
   const [action,         setAction]         = useState<RowAction>('idle')
@@ -149,6 +151,13 @@ export function RowActions({
             >
               <Mail className="h-3 w-3" />
               Generate Email
+            </button>
+            <button
+              onClick={() => { setOpen(false); onOpenPanel(contact) }}
+              className="flex items-center gap-2 w-full px-2 py-2 rounded-lg text-xs text-violet-700 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-950/40 transition-colors"
+            >
+              <Cpu className="h-3 w-3" />
+              Email Intelligence
             </button>
           </div>
         )}

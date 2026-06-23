@@ -3,6 +3,11 @@ export interface Contact {
   lead_id: string
   lead_name: string | null
   lead_domain: string | null
+  lead_vertical: string | null
+  lead_industry: string | null
+  lead_employee_count: number | null
+  lead_hq_city: string | null
+  lead_hq_state: string | null
   name: string
   title: string
   department: string | null
@@ -69,3 +74,44 @@ export type SortField = 'name' | 'company' | 'role' | 'modified' | null
 export type SortDir   = 'asc' | 'desc'
 export type GenPhase  = 'idle' | 'thinking' | 'content' | 'preview' | 'saving'
 export type RowAction = 'idle' | 'finding' | 'verifying' | 'done' | 'failed'
+
+// ── Email Intelligence Panel ───────────────────────────────────────────────────
+
+export type EIToolId =
+  | 'local_discover'
+  | 'hunter'
+  | 'zerobounce_validate'
+  | 'zerobounce_find'
+  | 'smtp_probe'
+  | 'pattern_candidates'
+
+export type EIRunState = 'idle' | 'running' | 'done' | 'error'
+
+export interface EITool {
+  id:                 EIToolId
+  name:               string
+  engine:             string
+  free:               boolean
+  available:          boolean
+  unavailable_reason: string | null
+}
+
+export interface EIToolState {
+  toolId:    EIToolId
+  state:     EIRunState
+  taskId:    string | null
+  result:    Record<string, unknown> | null
+  error:     string | null
+  startedAt: number | null
+}
+
+export interface EICandidate {
+  email:       string
+  pattern:     string
+  rank:        number
+  smtpVerdict: string | null
+  zbVerdict:   string | null
+  probing:     boolean
+}
+
+export type EITab = 'overview' | 'tools' | 'candidates' | 'history'

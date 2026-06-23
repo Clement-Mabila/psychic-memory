@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils'
 import { ContactRow } from './ContactRow'
 import type { Contact, SortField, SortDir } from './types'
 
+
 // ── Sort helper ───────────────────────────────────────────────────────────────
 
 export function sortContacts(contacts: Contact[], field: SortField, dir: SortDir): Contact[] {
@@ -123,6 +124,7 @@ export function ContactsTable({
   onResolved,
   onBulkVerify,
   onBulkClear,
+  onRowClick,
 }: {
   contacts: Contact[]
   isLoading: boolean
@@ -140,6 +142,7 @@ export function ContactsTable({
   onResolved: (id: string) => void
   onBulkVerify: () => void
   onBulkClear: () => void
+  onRowClick: (c: Contact) => void
 }) {
   return (
     <div className="space-y-4">
@@ -203,6 +206,7 @@ export function ContactsTable({
                     selected={selected.has(c.id)}
                     onSelect={onToggleSelect}
                     onResolved={onResolved}
+                    onRowClick={onRowClick}
                   />
                 ))}
               </tbody>

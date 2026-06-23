@@ -1,0 +1,48 @@
+<svg width="881" height="188" viewBox="0 0 881 188" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="881" y2="188" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#073F5C"/>
+      <stop offset="100%" stop-color="#0A5B83"/>
+    </linearGradient>
+
+    <radialGradient id="vignette" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse"
+      gradientTransform="translate(440 94) scale(620 200)">
+      <stop offset="0%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#02212F" stop-opacity="0.4"/>
+    </radialGradient>
+
+    <filter id="softShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+  </defs>
+
+  <rect width="881" height="188" fill="url(#bg)"/>
+
+  <!-- Large cream square, rotated, upper right -->
+  <rect x="0" y="0" width="260" height="260" fill="#F1F4DC"
+        transform="translate(700 -40) rotate(18)" opacity="0.5"/>
+
+  <!-- Light cyan circle, bottom right -->
+  <circle cx="845" cy="230" r="170" fill="#69D2E7" opacity="0.45"/>
+
+  <!-- Deep teal triangle, mid-right -->
+  <polygon points="0,0 220,40 40,230" fill="#062F45"
+           transform="translate(560 -30) rotate(8)" opacity="0.45"/>
+
+  <!-- Orange triangle accent -->
+  <polygon points="0,160 160,0 160,160" fill="#F88C49"
+           transform="translate(120 10) rotate(-12)" opacity="0.35"/>
+
+  <!-- Mid teal circle, left side -->
+  <circle cx="60" cy="-30" r="150" fill="#1C799F" opacity="0.4"/>
+
+  <!-- Small cream square accent, center -->
+  <rect x="0" y="0" width="90" height="90" fill="#F1F4DC"
+        transform="translate(370 110) rotate(32)" opacity="0.22"/>
+
+  <!-- Small cyan triangle accent, far left -->
+  <polygon points="0,70 60,0 70,80" fill="#69D2E7"
+           transform="translate(-10 30) rotate(10)" opacity="0.25"/>
+
+  <rect width="881" height="188" fill="url(#vignette)"/>
+</svg>

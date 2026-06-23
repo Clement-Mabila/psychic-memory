@@ -6,37 +6,9 @@ import {
   CheckCheck,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Avatar } from '@/components/ui/Avatar'
 import { RowActions } from './RowActions'
 import type { Contact } from './types'
-
-// ── Avatar ────────────────────────────────────────────────────────────────────
-
-const AVATAR_COLORS = [
-  'bg-blue-50 dark:bg-blue-950/40 text-white',  'bg-stone-50 dark:bg-slate-800 text-white',
-  'bg-pink-500 text-white',  'bg-rose-500 text-white',
-  'bg-sky-50 dark:bg-sky-950/400 text-white',   'bg-fuchsia-50 dark:bg-fuchsia-950/400 text-white',
-  'bg-teal-500 text-white',  'bg-violet-600 text-white',
-]
-
-function getAvatarColor(name: string) {
-  let h = 0
-  for (let i = 0; i < name.length; i++) h = name.charCodeAt(i) + ((h << 5) - h)
-  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length]
-}
-
-function getInitials(name: string) {
-  const p = name.trim().split(/\s+/)
-  if (p.length === 1) return p[0].slice(0, 2).toUpperCase()
-  return (p[0][0] + p[p.length - 1][0]).toUpperCase()
-}
-
-function Avatar({ name }: { name: string }) {
-  return (
-    <span className={cn('w-7 h-7 text-[11px] rounded-full font-semibold flex items-center justify-center flex-shrink-0', getAvatarColor(name))}>
-      {getInitials(name)}
-    </span>
-  )
-}
 
 // ── TierBadge ─────────────────────────────────────────────────────────────────
 
@@ -134,22 +106,27 @@ export function ContactRow({
   selected,
   onSelect,
   onResolved,
+  onRowClick,
 }: {
   contact: Contact
   selected: boolean
   onSelect: (id: string) => void
   onResolved: (id: string) => void
+  onRowClick: (c: Contact) => void
 }) {
   const dateLabel = contact.modified
     ? new Date(contact.modified).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : '—'
 
   return (
-    <tr className={cn(
-      'border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors',
-      selected && 'bg-violet-50 dark:bg-violet-950/40',
-    )}>
-      <td className="py-4 px-4 w-10">
+    <tr
+      className={cn(
+        'border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer',
+        selected && 'bg-violet-50 dark:bg-violet-950/40',
+      )}
+      onClick={() => onRowClick(contact)}
+    >
+      <td className="py-4 px-4 w-10" onClick={e => e.stopPropagation()}>
         <input
           type="checkbox"
           checked={selected}
@@ -160,7 +137,7 @@ export function ContactRow({
 
       <td className="py-4 px-4">
         <div className="flex items-center gap-2.5">
-          <Avatar name={contact.name} />
+          <Avatar name={contact.name} email={contact.email} size="xs" />
           <div className="min-w-0">
             <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate max-w-[140px]">{contact.name}</p>
             <p className="text-xs text-slate-400 dark:text-slate-500 truncate max-w-[140px]">{contact.title}</p>
@@ -184,7 +161,7 @@ export function ContactRow({
         )}
       </td>
 
-      <td className="py-4 px-4 min-w-[180px]">
+      <td className="py-4 px-4 min-w-[180px]" onClick={e => e.stopPropagation()}>
         {contact.email
           ? <EmailCell email={contact.email} />
           : contact.ai_inferred_email
@@ -201,8 +178,8 @@ export function ContactRow({
         </div>
       </td>
 
-      <td className="py-4 px-2">
-        <RowActions contact={contact} onResolved={onResolved} />
+      <td className="py-4 px-2" onClick={e => e.stopPropagation()}>
+        <RowActions contact={contact} onResolved={onResolved} onOpenPanel={onRowClick} />
       </td>
     </tr>
   )
