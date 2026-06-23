@@ -8,11 +8,14 @@ import { cn, formatRelativeTime } from '@/lib/utils'
 import {
   LayoutGrid, Users, Clock, ShieldCheck, Cog, LogOut, Atom,
   Contact, WalletCards, Layers2, Waypoints, PanelRight, Search,
-  ChevronDown, ChevronRight, Squircle, Circle, SwatchBook,
+  ChevronDown, ChevronRight, Squircle, Circle, SwatchBook, Gauge,
 } from 'lucide-react'
+import axios from 'axios'
+import Cookies from 'js-cookie'
 import { ChatPanel } from '@/components/chat/ChatPanel'
 import { logout } from '@/lib/api'
 import api from '@/lib/api'
+import { UsageModal } from '@/components/layout/UsageModal'
 import { useAgentFocus } from '@/lib/agent-focus-context'
 import { useAgentSelection } from '@/lib/agent-selection-context'
 import { AGENT_META } from '@/components/agents/AgentMeta'
@@ -346,7 +349,23 @@ export function Sidebar() {
   // expanded: true = 224px, false = 72px (icon rail)
   const [expanded, setExpanded]     = useState(true)
   const [chatOpen, setChatOpen]     = useState(false)
+  const [usageOpen, setUsageOpen]   = useState(false)
   const mounted = useRef(false)
+
+  const { data: usageData } = useQuery<{ budget_pct_used: number | null; alert_at_pct: number }>({
+    queryKey: ['my-usage', '30d'],
+    queryFn: async () => {
+      const token = Cookies.get('access_token')
+      const { data } = await axios.get('/api/system/usage/my?period=30d', {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      return data
+    },
+    refetchInterval: 60_000,
+    staleTime: 55_000,
+  })
+  const usagePct  = usageData?.budget_pct_used ?? null
+  const alertPct  = usageData?.alert_at_pct ?? 80
 
   // ⌘K / Ctrl+K toggles chat panel
   useEffect(() => {
@@ -431,6 +450,48 @@ export function Sidebar() {
 
         <FadingDivider />
 
+        {/* Usage pill */}
+        <div className="px-3 pb-1">
+          {expanded ? (
+            <button onClick={() => setUsageOpen(true)}
+              className="group flex items-center gap-3 w-full rounded-full px-3 py-2 transition-all hover:bg-gray-50 dark:hover:bg-neutral-800 text-left"
+            >
+              <span className="flex items-center justify-center w-5 h-5 shrink-0 text-slate-400 group-hover:text-cyan-600 transition-colors">
+                <Gauge size={15} strokeWidth={1.5} />
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300">My usage</span>
+                  {usagePct != null && (
+                    <span className={cn(
+                      'text-xs tabular-nums',
+                      usagePct >= alertPct ? 'text-amber-500' : 'text-slate-400',
+                    )}>
+                      {usagePct}%
+                    </span>
+                  )}
+                </div>
+                {usagePct != null && (
+                  <div className="mt-1 w-full h-1 bg-slate-100 dark:bg-neutral-700 rounded-full overflow-hidden">
+                    <div
+                      className={cn('h-full rounded-full transition-all duration-500', usagePct >= alertPct ? 'bg-amber-400' : 'bg-cyan-500')}
+                      style={{ width: `${Math.min(usagePct, 100)}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            </button>
+          ) : (
+            <button onClick={() => setUsageOpen(true)}
+              className="group relative flex items-center justify-center w-10 h-10 rounded-full mx-auto text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-950/30 transition-all"
+              title="My usage"
+            >
+              <Gauge size={17} strokeWidth={1.5} />
+              <span className={TOOLTIP}>My usage</span>
+            </button>
+          )}
+        </div>
+
         {/* Logout */}
         <div className="px-3 pb-3">
           {expanded ? (
@@ -460,6 +521,7 @@ export function Sidebar() {
 
     {/* ── MBody Brain chat panel (⌘K) ── */}
     <ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} />
+    <UsageModal open={usageOpen} onClose={() => setUsageOpen(false)} />
     </>
   )
 }

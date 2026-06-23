@@ -147,7 +147,7 @@ function ToolCard({
               ? <BadgeCheck className="h-6 w-6 text-white fill-blue-500 flex-shrink-0" />
               : <span className="text-xs text-slate-400 dark:text-slate-500 border border-gray-200 dark:border-neutral-700 rounded-full px-2 py-0.5">Unavailable</span>}
           </div>
-          <MoreHorizontal className="h-4 w-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
+          <MoreHorizontal className="h-4 w-4 text-slate-700 dark:text-slate-500 flex-shrink-0" />
         </div>
 
         {/* Content row: left info + right action */}
@@ -161,7 +161,12 @@ function ToolCard({
           </div>
 
           <div className="flex flex-col items-end gap-2 flex-shrink-0">
-            <span className="text-xs font-normal text-slate-600 dark:text-slate-400">
+            <span className={cn(
+              'text-xs',
+              meta.isFree
+                ? 'font-normal text-slate-600 dark:text-slate-400'
+                : 'font-semibold text-slate-800 dark:text-slate-400',
+            )}>
               {meta.isFree ? 'Free' : meta.costLabel.split('·')[0].trim()}
             </span>
 
@@ -184,8 +189,8 @@ function ToolCard({
                 className="w-9 h-9 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-100 dark:disabled:bg-neutral-700 disabled:text-slate-400 dark:disabled:text-slate-500 transition-colors"
               >
                 {ts.state === 'done'
-                  ? <RefreshCw className="h-4 w-4 text-white" />
-                  : <Play className="h-4 w-4 text-white" />}
+                  ? <RefreshCw className="h-3.5 w-3.5 text-white" />
+                  : <Play className="h-3.5 w-3.5 text-white" />}
               </button>
             )}
           </div>
@@ -425,11 +430,11 @@ function OverviewRow({ label, value }: { label: string; value: ReactNode }) {
 }
 
 const PRIORITY_CONFIG: Record<number, { label: string; Icon: ElementType; color: string }> = {
-  1: { label: 'Most Recommendation',    Icon: Flame, color: 'text-blue-500' },
-  2: { label: 'Highly Recommended',   Icon: Flame,                color: 'text-amber-500'  },
-  3: { label: 'Standard Recommendation', Icon: Flame,       color: 'text-blue-400'   },
+  1: { label: 'Top',    Icon: CircleFadingArrowUp, color: 'text-orange-500' },
+  2: { label: 'High',   Icon: Goal,               color: 'text-amber-500'  },
+  3: { label: 'Medium', Icon: CalendarClock,       color: 'text-blue-400'  },
 }
-const DEFAULT_PRIORITY = { label: 'Low', Icon: Flame, color: 'text-slate-400' }
+const DEFAULT_PRIORITY = { label: 'Low', Icon: CircleDashed, color: 'text-slate-400' }
 
 function priorityDisplay(rank: number) {
   return rank > 0 ? (PRIORITY_CONFIG[rank] ?? DEFAULT_PRIORITY) : null
