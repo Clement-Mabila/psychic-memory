@@ -13,6 +13,11 @@ import {
 import axios from 'axios'
 import Cookies from 'js-cookie'
 import { ChatPanel } from '@/components/chat/ChatPanel'
+import dynamic from 'next/dynamic'
+const TicketAccountPanelLazy = dynamic(
+  () => import('@/components/tickets/TicketAccountPanel').then(m => m.TicketAccountPanel),
+  { ssr: false },
+)
 import { logout } from '@/lib/api'
 import api from '@/lib/api'
 import { UsageModal } from '@/components/layout/UsageModal'
@@ -344,8 +349,9 @@ function AgentPanel() {
 
 // ── Sidebar ───────────────────────────────────────────────────────────────────
 export function Sidebar() {
-  const pathname     = usePathname()
-  const isAgentsPage = pathname.startsWith('/agents') || pathname.startsWith('/logs')
+  const pathname      = usePathname()
+  const isAgentsPage  = pathname.startsWith('/agents') || pathname.startsWith('/logs')
+  const isTicketsPage = pathname.startsWith('/tickets')
 
   // expanded: true = 224px, false = 72px (icon rail)
   const [expanded, setExpanded]     = useState(true)
@@ -390,13 +396,13 @@ export function Sidebar() {
 
   // Auto-collapse nav to icon-only when arriving on agents page
   useEffect(() => {
-    if (isAgentsPage) setExpanded(false)
-  }, [isAgentsPage])
+    if (isAgentsPage || isTicketsPage) setExpanded(false)
+  }, [isAgentsPage, isTicketsPage])
 
   // Sync --sidebar-w CSS variable and persist preference
   useEffect(() => {
-    const navW = expanded ? 224 : 72
-    const agentW = isAgentsPage ? 220 : 0
+    const navW   = expanded ? 224 : 72
+    const agentW = (isAgentsPage || isTicketsPage) ? 220 : 0
     document.documentElement.style.setProperty('--sidebar-w', `${navW + agentW}px`)
     localStorage.setItem('sidebar-expanded', String(expanded))
   }, [expanded, isAgentsPage])
@@ -518,6 +524,9 @@ export function Sidebar() {
 
       {/* ── Agent panel (agents pages only) ── */}
       {isAgentsPage && <AgentPanel />}
+
+      {/* ── Ticket account panel (tickets pages only) ── */}
+      {isTicketsPage && <TicketAccountPanelLazy />}
     </aside>
 
     {/* ── MBody Brain chat panel (⌘K) ── */}

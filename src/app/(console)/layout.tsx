@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/layout/page-header'
 import { isAuthenticated } from '@/lib/api'
 import { AgentFocusProvider } from '@/lib/agent-focus-context'
 import { AgentSelectionProvider } from '@/lib/agent-selection-context'
+import { TicketAccountProvider } from '@/lib/ticket-account-context'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
@@ -26,6 +27,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
     <QueryClientProvider client={queryClient}>
       <AgentSelectionProvider>
       <AgentFocusProvider>
+      <TicketAccountProvider>
         <div style={{
           display: 'flex',
           // AI page needs a hard 100vh so flex children can stretch to fill it.
@@ -49,6 +51,7 @@ export default function ConsoleLayout({ children }: { children: React.ReactNode 
             </main>
           </div>
         </div>
+      </TicketAccountProvider>
       </AgentFocusProvider>
       </AgentSelectionProvider>
     </QueryClientProvider>

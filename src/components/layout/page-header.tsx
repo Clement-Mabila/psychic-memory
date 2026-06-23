@@ -1,16 +1,19 @@
 'use client'
 
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
+import { usePathname, useRouter } from 'next/navigation'
 import { cn, formatRelativeTime } from '@/lib/utils'
-import { MoreHorizontal, Star, Search, AudioLines, CirclePlay, Circle, Octagon, Pentagon, Squircle, Aperture, Atom } from 'lucide-react'
+import { MoreHorizontal, Star, Search, AudioLines, CirclePlay, Circle, Octagon, Pentagon, Squircle, Aperture, Atom, Plus } from 'lucide-react'
 import api from '@/lib/api'
 import { useAgentFocus } from '@/lib/agent-focus-context'
-import { useMutation } from '@tanstack/react-query'
-import { useRouter } from 'next/navigation'
+import { useTicketAccountFocus } from '@/lib/ticket-account-context'
 import { AgentLogsPanel } from '@/components/agents/AgentLogsPanel'
 import { LiveRunPanel } from '@/components/agents/LiveRunPanel'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
+import { Avatar } from '@/components/ui/Avatar'
+import axios from 'axios'
+import Cookies from 'js-cookie'
 
 interface PageHeaderProps {
   className?: string
@@ -40,10 +43,160 @@ const STATUS_STYLE: Record<string, { dot: string; label: string }> = {
   pending: { dot: 'bg-amber-400',                label: 'Pending'    },
 }
 
+// ── Tickets header (inline) ───────────────────────────────────────────────────
+
+function TicketsPageHeader({ className }: { className?: string }) {
+  const { ticketFocus } = useTicketAccountFocus()
+  const accountName     = ticketFocus?.label ?? 'All Tickets'
+  const recentTickets   = ticketFocus?.recentTickets ?? []
+
+  // Fetch ticket list for submitter avatars + stats
+  const { data: tickets = [] } = useQuery<any[]>({
+    queryKey: ['ticket-list'],
+    queryFn: async () => {
+      const token = Cookies.get('access_token')
+      const { data } = await axios.get('/api/tickets/', {
+        params: { per_page: 100 },
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      return data.results ?? []
+    },
+    staleTime: 10_000,
+  })
+
+  const domainTickets = ticketFocus
+    ? tickets.filter((t: any) => t.submitter_email?.split('@')[1] === ticketFocus.domain)
+    : tickets
+
+  const openCount    = domainTickets.filter((t: any) => t.status === 'open' || t.status === 'auto_responded' || t.status === 'in_review').length
+  const slaCount     = domainTickets.filter((t: any) => t.sla_breached).length
+
+  // Unique submitter avatars (top 3)
+  const seenEmails = new Set<string>()
+  const avatarUsers: { email: string; name: string }[] = []
+  for (const t of domainTickets) {
+    if (!seenEmails.has(t.submitter_email)) {
+      seenEmails.add(t.submitter_email)
+      const local = (t.submitter_email ?? '').split('@')[0]
+      avatarUsers.push({
+        email: t.submitter_email,
+        name:  local.split(/[._-]/).map((p: string) => p.charAt(0).toUpperCase() + p.slice(1)).join(' '),
+      })
+    }
+    if (avatarUsers.length >= 3) break
+  }
+  const extraCount = Math.max(0, seenEmails.size - 3)
+
+  return (
+    <header className={cn('bg-white border-b border-gray-100 px-8 pt-8 pb-5 flex-shrink-0 dark:bg-neutral-900 dark:border-neutral-900', className)}>
+
+      {/* Title row */}
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-2.5">
+          <Squircle size={16} className="flex-shrink-0 text-violet-500" strokeWidth={1.75} />
+          <h1 className="text-xl font-bold text-gray-900 tracking-tight dark:text-slate-100">{accountName}</h1>
+          {openCount > 0 && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              {openCount} active
+            </span>
+          )}
+        </div>
+
+        {/* Right: theme + search + star + more */}
+        <div className="flex items-center gap-0.5">
+          <ThemeToggle />
+          <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:text-slate-300 transition-colors">
+            <Search size={16} strokeWidth={1.75} />
+          </button>
+          <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-yellow-400 dark:hover:text-yellow-500 transition-colors">
+            <Star size={16} strokeWidth={1.75} />
+          </button>
+          <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:text-slate-300 transition-colors">
+            <MoreHorizontal size={16} strokeWidth={1.75} />
+          </button>
+        </div>
+      </div>
+
+      {/* Recent tickets breadcrumb — same position as recent leads */}
+      <div className="pl-6 mb-5 min-h-[18px]">
+        {recentTickets.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-gray-300 text-xs select-none dark:text-slate-600">└</span>
+            {recentTickets.map((t, i) => (
+              <span key={t.id} className="flex items-center gap-1.5">
+                {i > 0 && <span className="text-gray-300 text-xs dark:text-slate-600">/</span>}
+                <span className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 dark:hover:text-slate-300 cursor-pointer transition-colors">
+                  <span className="w-3 h-3 rounded-sm border border-gray-300 dark:border-slate-600 flex-shrink-0" />
+                  {t.subject.length > 32 ? t.subject.slice(0, 32) + '…' : t.subject}
+                </span>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Stats row + right: avatar stack + add */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <span className="text-xs text-gray-400 dark:text-slate-500">
+            <span className="text-gray-600 font-medium dark:text-slate-300">{domainTickets.length}</span> tickets
+          </span>
+          {openCount > 0 && (
+            <>
+              <span className="text-gray-200 text-xs dark:text-slate-700">·</span>
+              <span className="text-xs text-amber-500 dark:text-amber-400 font-medium">{openCount} open</span>
+            </>
+          )}
+          {slaCount > 0 && (
+            <>
+              <span className="text-gray-200 text-xs dark:text-slate-700">·</span>
+              <span className="text-xs text-red-500 dark:text-red-400 font-medium">{slaCount} SLA breached</span>
+            </>
+          )}
+        </div>
+
+        {/* Avatar stack + add button — replaces AudioLines/CirclePlay */}
+        <div className="flex items-center gap-2">
+          {avatarUsers.length > 0 && (
+            <div className="flex items-center">
+              {avatarUsers.map((u, i) => (
+                <div key={u.email} className={cn('ring-2 ring-white dark:ring-neutral-900 rounded-full', i > 0 && '-ml-2')}>
+                  <Avatar email={u.email} name={u.name} size="sm" />
+                </div>
+              ))}
+              {extraCount > 0 && (
+                <div className="-ml-2 w-8 h-8 rounded-full ring-2 ring-white dark:ring-neutral-900 bg-slate-100 dark:bg-neutral-800 flex items-center justify-center">
+                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">+{extraCount}</span>
+                </div>
+              )}
+            </div>
+          )}
+          <button
+            title="New Ticket"
+            className="h-9 w-9 flex items-center justify-center rounded-2xl font-medium transition-colors bg-cyan-500 text-white hover:bg-cyan-600"
+          >
+            <Plus size={16} strokeWidth={2} />
+          </button>
+        </div>
+      </div>
+
+    </header>
+  )
+}
+
+// ── Agent header (original) ───────────────────────────────────────────────────
+
 export function PageHeader({ className }: PageHeaderProps) {
+  const pathname         = usePathname()
   const { focusedAgent } = useAgentFocus()
   const router           = useRouter()
   const [logsOpen, setLogsOpen] = useState(false)
+
+  // Delegate to tickets header on /tickets
+  if (pathname.startsWith('/tickets')) {
+    return <TicketsPageHeader className={className} />
+  }
 
   const { data } = useQuery({
     queryKey: ['sidebar-agents'],
