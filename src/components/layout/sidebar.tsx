@@ -405,7 +405,7 @@ export function Sidebar() {
     const agentW = (isAgentsPage || isTicketsPage) ? 220 : 0
     document.documentElement.style.setProperty('--sidebar-w', `${navW + agentW}px`)
     localStorage.setItem('sidebar-expanded', String(expanded))
-  }, [expanded, isAgentsPage])
+  }, [expanded, isAgentsPage, isTicketsPage])
 
   const iconOnly = !expanded
 
@@ -413,7 +413,7 @@ export function Sidebar() {
     <>
     <aside
       className="fixed top-0 left-0 h-screen z-50 flex flex-row overflow-hidden transition-all duration-300 ease-in-out"
-      style={{ width: expanded ? (isAgentsPage ? 444 : 224) : (isAgentsPage ? 292 : 72) }}
+      style={{ width: expanded ? ((isAgentsPage || isTicketsPage) ? 444 : 224) : ((isAgentsPage || isTicketsPage) ? 292 : 72) }}
     >
       {/* ── Main nav rail (always visible) ── */}
       <div className={cn(
