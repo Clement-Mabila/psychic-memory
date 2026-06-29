@@ -1,11 +1,11 @@
 ﻿'use client'
 import { type ReactNode, type ElementType, useState, useEffect, useCallback, useRef } from 'react'
 import {
-  ArrowLeft, Mail, Phone, BadgeCheck, MoreHorizontal,
+  Mail, Phone, BadgeCheck, MoreHorizontal,
   Search, Crosshair, Grid3x3, Radio, Shield, List,
   Loader2, XCircle, Clock, AlertCircle, CheckCircle2,
   ArrowUpCircle, RefreshCw, TriangleAlert, ChevronDown, Calendar, Play,
-  CircleFadingArrowUp, Goal, CalendarClock, CircleDashed,
+  CircleDashed,
   Target,
   Flag,
   Flame,
@@ -91,6 +91,15 @@ function MonoEmail({ email }: { email: string }) {
 
 // ── VerdictChip ───────────────────────────────────────────────────────────────
 
+const VERDICT_TOOLTIP: Record<string, string> = {
+  valid:       'SMTP confirmed this mailbox exists and accepts mail.',
+  catch_all:   'Server accepts all addresses — existence unconfirmed.',
+  'catch-all': 'Server accepts all addresses — existence unconfirmed.',
+  invalid:     'SMTP rejected this mailbox — address does not exist.',
+  unknown:     'SMTP probe was inconclusive.',
+  no_mx:       'No MX record found for this domain — it cannot receive email.',
+}
+
 function VerdictChip({ verdict }: { verdict: string | null }) {
   if (!verdict) return <span className="text-xs text-slate-400 dark:text-slate-500">—</span>
   const cfg: Record<string, string> = {
@@ -101,9 +110,13 @@ function VerdictChip({ verdict }: { verdict: string | null }) {
     unknown:     'bg-gray-100 text-slate-500 dark:bg-neutral-800 dark:text-slate-400',
     no_mx:       'bg-gray-100 text-slate-500 dark:bg-neutral-800 dark:text-slate-400',
   }
-  const cls = cfg[verdict.toLowerCase()] ?? 'bg-gray-100 text-slate-500 dark:bg-neutral-800 dark:text-slate-400'
+  const key = verdict.toLowerCase()
+  const cls = cfg[key] ?? 'bg-gray-100 text-slate-500 dark:bg-neutral-800 dark:text-slate-400'
   return (
-    <span className={cn('inline-flex items-center text-xs font-bold  px-1.5 py-0.5 rounded', cls)}>
+    <span
+      title={VERDICT_TOOLTIP[key]}
+      className={cn('inline-flex items-center text-xs font-bold px-1.5 py-0.5 rounded cursor-help', cls)}
+    >
       {verdict.replace('_', ' ')}
     </span>
   )
@@ -363,7 +376,7 @@ function CandidatesTab({
               </thead>
               <tbody>
                 {candidates.map((cand, idx) => (
-                  <tr key={cand.email} className="border-b border-gray-100 dark:border-neutral-800 last:border-none hover:bg-gray-50/50 dark:hover:bg-neutral-800/50">
+                  <tr key={`${cand.email}-${idx}`} className="border-b border-gray-100 dark:border-neutral-800 last:border-none hover:bg-gray-50/50 dark:hover:bg-neutral-800/50">
                     <td className="py-2.5 px-4">
                       <span className={cn(
                         'inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold',
@@ -430,11 +443,11 @@ function OverviewRow({ label, value }: { label: string; value: ReactNode }) {
 }
 
 const PRIORITY_CONFIG: Record<number, { label: string; Icon: ElementType; color: string }> = {
-  1: { label: 'Top',    Icon: CircleFadingArrowUp, color: 'text-orange-500' },
-  2: { label: 'High',   Icon: Goal,               color: 'text-amber-500'  },
-  3: { label: 'Medium', Icon: CalendarClock,       color: 'text-blue-400'  },
+  1: { label: 'Most Recommended',    Icon: Flame, color: 'text-rose-500' },
+  2: { label: 'Highly Recommended',   Icon: Flame,               color: 'text-amber-500'  },
+  3: { label: 'Recommended', Icon: Flame,       color: 'text-blue-400'  },
 }
-const DEFAULT_PRIORITY = { label: 'Low', Icon: CircleDashed, color: 'text-slate-400' }
+const DEFAULT_PRIORITY = { label: 'Relevant', Icon: Flame, color: 'text-slate-400' }
 
 function priorityDisplay(rank: number) {
   return rank > 0 ? (PRIORITY_CONFIG[rank] ?? DEFAULT_PRIORITY) : null

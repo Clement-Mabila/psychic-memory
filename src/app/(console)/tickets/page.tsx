@@ -64,7 +64,11 @@ function applyFilters(
   domain:   string | null,
 ): TicketListItem[] {
   return tickets.filter(t => {
-    if (domain && emailToDomain(t.submitter_email) !== domain) return false
+    if (domain) {
+      const emailDomain = emailToDomain(t.submitter_email)
+      const companyKey  = (t.metadata?.company_name ?? '').toLowerCase()
+      if (emailDomain !== domain && companyKey !== domain) return false
+    }
     if (search) {
       const q = search.toLowerCase()
       if (!t.subject.toLowerCase().includes(q) && !t.submitter_email.toLowerCase().includes(q)) return false

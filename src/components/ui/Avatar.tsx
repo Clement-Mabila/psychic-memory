@@ -1,25 +1,27 @@
 const SIZE_PX: Record<string, number> = {
-  xs:   28,
-  sm:   32,
-  md:   36,
-  lg:   40,
-  xl:   56,
+  xxxs:  20,
+  xs:    28,
+  sm:    32,
+  md:    36,
+  lg:    40,
+  xl:    56,
   '2xl': 100,
 }
 
 const SIZE_CLASS: Record<string, string> = {
-  xs:   'w-7 h-7',
-  sm:   'w-8 h-8',
-  md:   'w-9 h-9',
-  lg:   'w-10 h-10',
-  xl:   'w-14 h-14',
+  xxxs:  'w-5 h-5',
+  xs:    'w-7 h-7',
+  sm:    'w-8 h-8',
+  md:    'w-9 h-9',
+  lg:    'w-10 h-10',
+  xl:    'w-14 h-14',
   '2xl': 'w-[100px] h-[100px]',
 }
 
 const BG_COLORS    = '0a5b83,1c799f,69d2e7,f1f4dc,f88c49'
 const SHAPE_COLORS = '0a5b83,1c799f,69d2e7,f1f4dc,f88c49'
 
-export type AvatarSize = keyof typeof SIZE_PX
+export type AvatarSize = 'xxxs' | 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl'
 
 export function Avatar({
   name,

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  Bolt, Flag, Globe, Users, Plus, Loader2, MapPin,
+  GlobeLock, Flag, Globe, Users, Plus, Loader2, MapPin,
   MoreHorizontal, Play, RotateCcw, Circle, Octagon, Squircle, Aperture, Pentagon, Atom,
   MessageSquare, Link2, Copy, Check, Phone, PhoneOff,
   Calendar, Tag, ChevronDown,
@@ -558,7 +558,7 @@ function MemberCard({
               onClick={() => onSetGroup(member.id)}
               className="w-full text-left px-3 py-2 text-xs text-slate-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-b-xl flex items-center gap-2"
             >
-              <Bolt size={11} className="text-indigo-400" /> Set Group
+              <GlobeLock size={11} className="text-indigo-400" /> Set Group
             </button>
           </div>
         </div>
@@ -571,7 +571,7 @@ function MemberCard({
       {/* ── Location ── */}
       {location && (
         <div className="flex items-center gap-1 mb-1.5">
-          <MapPin size={14} className="text-slate-300 dark:text-slate-600 flex-shrink-0" />
+          <MapPin size={15} className="text-slate-300 dark:text-slate-600 flex-shrink-0" />
           <span className="text-xs text-slate-400 dark:text-slate-500">{location}</span>
         </div>
       )}
@@ -579,8 +579,8 @@ function MemberCard({
       {/* ── Corporate group badge / spacer ── */}
       {member.corporate_group ? (
         <div className="flex items-center gap-1 mb-3">
-          <Bolt size={14} className="text-violet-300 dark:text-violet-600 flex-shrink-0" />
-          <span className="text-xs text-violet-500 dark:text-violet-400 font-medium truncate">
+          <GlobeLock size={15} className="text-cyan-600 dark:text-cyan-600 flex-shrink-0" />
+          <span className="text-xs text-cyan-600 dark:text-cyan-600 font-normal truncate">
             {member.corporate_group.name}
           </span>
           {member.is_group_parent && (
@@ -773,7 +773,7 @@ export default function GroupKanbanView({ search, onOpen, onSetGroup }: Props) {
   if (groups.length === 0) return (
     <div className="flex flex-col items-center justify-center py-20 gap-3">
       <div className="w-12 h-12 rounded-2xl bg-neutral-100 dark:bg-neutral-700 flex items-center justify-center">
-        <Bolt size={20} className="text-slate-400 dark:text-slate-500" />
+        <GlobeLock size={20} className="text-slate-400 dark:text-slate-500" />
       </div>
       <p className="text-sm text-slate-500 dark:text-slate-400">
         {search ? `No groups matching "${search}"` : 'No corporate groups yet'}

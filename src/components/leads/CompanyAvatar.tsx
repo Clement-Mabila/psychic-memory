@@ -17,6 +17,7 @@ interface CompanyAvatarProps {
   domain: string
   name: string
   size?: 'sm' | 'md' | 'lg' | 'xxs' | 'xs'
+  circle?: boolean
 }
 
 const SIZE = {
@@ -28,7 +29,7 @@ const SIZE = {
 }
 const IMG_SIZE = { xxs: 16, xs: 24, sm: 32, md: 40, lg: 48 }
 
-export default function CompanyAvatar({ domain, name, size = 'md' }: CompanyAvatarProps) {
+export default function CompanyAvatar({ domain, name, size = 'md', circle = false }: CompanyAvatarProps) {
   const [src, setSrc] = useState(`https://logo.clearbit.com/${domain}`)
   const [triedFavicon, setTriedFavicon] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -41,16 +42,18 @@ export default function CompanyAvatar({ domain, name, size = 'md' }: CompanyAvat
 
   const px = IMG_SIZE[size]
 
+  const roundClass = circle ? 'rounded-full' : 'rounded-xl'
+
   if (failed) {
     return (
-      <div className={`${SIZE[size]} ${colorForDomain(domain)} rounded-xl flex items-center justify-center flex-shrink-0 ring-1 ring-stone-300 dark:ring-stone-600`}>
+      <div className={`${SIZE[size]} ${colorForDomain(domain)} ${roundClass} flex items-center justify-center flex-shrink-0 ring-1 ring-stone-300 dark:ring-stone-600`}>
         <span className="text-white font-semibold leading-none">{initials}</span>
       </div>
     )
   }
 
   return (
-    <div className={`${SIZE[size]} rounded-xl overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-zinc-800 ring-1 ring-stone-300 dark:ring-stone-600`}>
+    <div className={`${SIZE[size]} ${roundClass} overflow-hidden flex-shrink-0 bg-gray-100 dark:bg-zinc-800 ring-1 ring-stone-300 dark:ring-stone-600`}>
       <img
         src={src}
         alt={name}

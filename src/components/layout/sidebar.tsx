@@ -8,7 +8,7 @@ import { cn, formatRelativeTime } from '@/lib/utils'
 import {
   LayoutGrid, Users, Clock, ShieldCheck, Cog, LogOut, Atom,
   Contact, WalletCards, Layers2, Waypoints, PanelRight, Search,
-  ChevronDown, ChevronRight, Squircle, Circle, SwatchBook, Gauge, Inbox,
+  ChevronDown, ChevronRight, Squircle, Circle, SwatchBook, Gauge, FolderClock,
 } from 'lucide-react'
 import axios from 'axios'
 import Cookies from 'js-cookie'
@@ -54,7 +54,7 @@ const NAV_SECTIONS = [
     { label: 'Overview',    href: '/dashboard',   icon: LayoutGrid  },
     { label: 'Leads',        href: '/leads',        icon: Users       },
     { label: 'Contacts',     href: '/contacts',     icon: Contact     },
-    { label: 'Tickets',      href: '/tickets',      icon: Inbox       },
+    { label: 'Tickets',      href: '/tickets',      icon: FolderClock       },
     { label: 'AI',  href: '/ai',           icon: AiSoundIcon },
   ],
   [

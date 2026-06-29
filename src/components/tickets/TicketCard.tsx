@@ -1,6 +1,6 @@
 'use client'
 
-import { type ElementType } from 'react'
+import { type ElementType, useState, useEffect } from 'react'
 import { cn, formatRelativeTime } from '@/lib/utils'
 import {
   Database, MessageCircle, TriangleAlert, Shield,
@@ -10,20 +10,29 @@ import {
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface TicketListItem {
-  id:              string
-  short_id:        string
-  ticket_type:     string
-  subject:         string
-  priority:        string
-  status:          string
-  submitter_email: string
-  submitter_role:  string
-  sla_deadline:    string | null
-  sla_breached:    boolean
-  is_duplicate:    boolean
-  comment_count:   number
-  created_at:      string
-  updated_at:      string
+  id:                   string
+  short_id:             string
+  ticket_type:          string
+  subject:              string
+  priority:             string
+  status:               string
+  submitter_email:      string
+  submitter_role:       string
+  sla_deadline:         string | null
+  sla_breached:         boolean
+  is_duplicate:         boolean
+  metadata?:            {
+    company_name?:   string
+    company_domain?: string
+    entity_refs?:    Array<{ type: string; id: string; label: string; url: string }>
+  }
+  comment_count:        number
+  body_preview:         string
+  participants:         string[]
+  task_count:           number
+  task_completed_count: number
+  created_at:           string
+  updated_at:           string
 }
 
 // ── Config maps ───────────────────────────────────────────────────────────────
@@ -60,6 +69,53 @@ const PRIORITY_BADGE: Record<string, string | null> = {
   high:   'bg-orange-500 text-white',
   medium: null,
   low:    null,
+}
+
+// ── AgentRingIndicator ────────────────────────────────────────────────────────
+
+const AGENT_TIMEOUT_MS = 10 * 60 * 1000   // Ollama httpx timeout: 600 s
+const RING_R           = 8
+const RING_CIRC        = 2 * Math.PI * RING_R  // ~50.27
+
+export function AgentRingIndicator({ createdAt }: { createdAt: string }) {
+  const [elapsed, setElapsed] = useState(() => Date.now() - new Date(createdAt).getTime())
+
+  useEffect(() => {
+    const id = setInterval(() => setElapsed(Date.now() - new Date(createdAt).getTime()), 5000)
+    return () => clearInterval(id)
+  }, [createdAt])
+
+  const progress   = Math.min(elapsed / AGENT_TIMEOUT_MS, 1)
+  const timedOut   = progress >= 1
+  const dashOffset = RING_CIRC * (1 - progress)
+  const arcColor   = timedOut ? '#f59e0b' : '#3b82f6'
+  const textColor  = timedOut ? '#d97706' : '#2563eb'
+
+  return (
+    <svg
+      width="20" height="20" viewBox="0 0 20 20"
+      className="flex-shrink-0"
+      aria-label={timedOut ? 'Agent timeout' : 'Agent processing'}
+    >
+      <title>{timedOut ? 'Agent timed out — Celery may not be running' : 'Agent is processing this ticket…'}</title>
+      <circle cx="10" cy="10" r={RING_R} fill="none" stroke="rgba(59,130,246,0.18)" strokeWidth="1.5" />
+      <circle
+        cx="10" cy="10" r={RING_R}
+        fill="none"
+        stroke={arcColor}
+        strokeWidth="1.5"
+        strokeDasharray={`${RING_CIRC} ${RING_CIRC}`}
+        strokeDashoffset={dashOffset}
+        strokeLinecap="round"
+        style={{
+          transform:       'rotate(-90deg)',
+          transformOrigin: '10px 10px',
+          transition:      'stroke-dashoffset 5s linear, stroke 0.5s ease',
+        }}
+      />
+      <text x="10" y="14" textAnchor="middle" fill={textColor} fontSize="8" fontWeight="800" fontFamily="system-ui,sans-serif">!</text>
+    </svg>
+  )
 }
 
 // ── TicketCard ────────────────────────────────────────────────────────────────
@@ -168,9 +224,13 @@ export function TicketCard({ ticket, onClick }: TicketCardProps) {
         )}
       </div>
 
-      {/* ── Right: status dot ── */}
-      <div className="flex-shrink-0 self-center">
-        <span className={cn('w-2.5 h-2.5 rounded-full block', dotCls)} />
+      {/* ── Right: status dot + agent indicator ── */}
+      <div className={cn(
+        'flex-shrink-0 flex flex-col items-center gap-2',
+        ticket.status === 'open' ? 'self-stretch justify-between py-0.5' : 'self-center',
+      )}>
+        <span className={cn('w-2.5 h-2.5 rounded-full block flex-shrink-0', dotCls)} />
+        {ticket.status === 'open' && <AgentRingIndicator createdAt={ticket.created_at} />}
       </div>
     </div>
   )

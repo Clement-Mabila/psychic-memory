@@ -8,13 +8,15 @@ import { LiveRunPanel } from '@/components/agents/LiveRunPanel'
 
 import { AGENT_META } from '@/components/agents/AgentMeta'
 import { resolveStatus } from '@/components/agents/AgentStatusUtils'
-import { AgentLogsHeader } from '@/components/agents/AgentLogsHeader'
+import { AgentLogsHeader, type AgentView } from '@/components/agents/AgentLogsHeader'
 import { AgentCardGrid } from '@/components/agents/AgentCardGrid'
+import { AgentNetworkViz } from '@/components/agents/AgentNetworkViz'
 import { useAgentSelection } from '@/lib/agent-selection-context'
 
 export default function AgentLogsPage() {
   const { activeAgent } = useAgentSelection()
   const [liveLog, setLiveLog] = useState<{ lead_id: string; lead_name: string } | null>(null)
+  const [view, setView] = useState<AgentView>('list')
 
   const meta = AGENT_META[activeAgent] ?? AGENT_META['research']
 
@@ -29,7 +31,16 @@ export default function AgentLogsPage() {
     },
   })
 
-  const logs: any[] = data?.logs ?? []
+  const { data: allAgentsData } = useQuery({
+    queryKey: ['sidebar-agents'],
+    queryFn: () => api.get('/agents').then(r => r.data),
+    refetchInterval: 5_000,
+    staleTime: 4_000,
+    enabled: view === 'network',
+  })
+
+  const logs: any[]      = data?.logs ?? []
+  const allAgents: any[] = allAgentsData?.agents ?? []
 
   return (
     <>
@@ -38,19 +49,29 @@ export default function AgentLogsPage() {
         {/* ── Main content area ── */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
 
-          <AgentLogsHeader meta={meta} logs={logs} />
+          <AgentLogsHeader
+            meta={meta}
+            logs={logs}
+            view={view}
+            onViewChange={setView}
+          />
 
-          <div className="flex-1 overflow-y-auto px-6 py-5">
-            <AgentCardGrid
-              logs={logs}
-              defaultMeta={meta}
-              isLoading={isLoading}
-              agentLabel={meta.label}
-              onOpenLive={l => setLiveLog({ lead_id: l.lead_id, lead_name: l.lead_name })}
-            />
-          </div>
+          {view === 'list' ? (
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              <AgentCardGrid
+                logs={logs}
+                defaultMeta={meta}
+                isLoading={isLoading}
+                agentLabel={meta.label}
+                onOpenLive={l => setLiveLog({ lead_id: l.lead_id, lead_name: l.lead_name })}
+              />
+            </div>
+          ) : (
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <AgentNetworkViz agents={allAgents} />
+            </div>
+          )}
         </div>
-
 
       </div>
 

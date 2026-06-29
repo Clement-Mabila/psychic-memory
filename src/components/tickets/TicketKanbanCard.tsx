@@ -2,8 +2,8 @@
 
 import { cn } from '@/lib/utils'
 import { Avatar } from '@/components/ui/Avatar'
-import { MessageCircle, TriangleAlert, Database, Shield, Pencil, Key, Lightbulb, AlertCircle } from 'lucide-react'
-import type { TicketListItem } from './TicketCard'
+import { MessageCircle, TriangleAlert, CheckSquare } from 'lucide-react'
+import { AgentRingIndicator, type TicketListItem } from './TicketCard'
 
 // ── Type config ───────────────────────────────────────────────────────────────
 
@@ -46,6 +46,18 @@ export function TicketKanbanCard({ ticket, onClick }: TicketKanbanCardProps) {
   const typeConf = TYPE_CONFIG[ticket.ticket_type] ?? TYPE_CONFIG.general_enquiry
   const priCls   = PRIORITY_BADGE[ticket.priority] ?? null
 
+  const taskTotal = ticket.task_count ?? 0
+  const taskDone  = ticket.task_completed_count ?? 0
+  const taskPct   = taskTotal > 0 ? Math.round((taskDone / taskTotal) * 100) : 0
+
+  // Avatar stack: submitter first, then participants
+  const allAvatars = [
+    { email: ticket.submitter_email, name: nameFromEmail(ticket.submitter_email) },
+    ...(ticket.participants ?? []).map(e => ({ email: e, name: nameFromEmail(e) })),
+  ]
+  const visibleAvatars = allAvatars.slice(0, 3)
+  const extraCount     = Math.max(0, allAvatars.length - 3)
+
   return (
     <div
       onClick={() => onClick(ticket)}
@@ -73,6 +85,13 @@ export function TicketKanbanCard({ ticket, onClick }: TicketKanbanCardProps) {
         {ticket.subject}
       </p>
 
+      {/* Body preview */}
+      {ticket.body_preview && (
+        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2 mb-2">
+          {ticket.body_preview}
+        </p>
+      )}
+
       {/* SLA warning */}
       {ticket.sla_breached && (
         <div className="flex items-center gap-1 text-red-500 dark:text-red-400 mb-2">
@@ -81,19 +100,47 @@ export function TicketKanbanCard({ ticket, onClick }: TicketKanbanCardProps) {
         </div>
       )}
 
-      {/* Bottom row: avatar + name · role · comment count · SLA date */}
+      {/* Task progress bar */}
+      {taskTotal > 0 && (
+        <div className="mb-3">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-1 text-slate-400 dark:text-slate-500">
+              <CheckSquare size={10} className="flex-shrink-0" />
+              <span className="text-[10px]">{taskDone}/{taskTotal}</span>
+            </div>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500">{taskPct}%</span>
+          </div>
+          <div className="h-1 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-cyan-400 dark:bg-cyan-500 transition-all"
+              style={{ width: `${taskPct}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Bottom row: avatar stack · comment count · SLA date */}
       <div className="flex items-center gap-2 mt-2.5 pt-2.5 border-t border-slate-50 dark:border-slate-800">
-        <Avatar
-          email={ticket.submitter_email}
-          name={nameFromEmail(ticket.submitter_email)}
-          size="xs"
-        />
-        <span className="text-[11px] text-slate-500 dark:text-slate-400 truncate flex-1 leading-none">
-          {nameFromEmail(ticket.submitter_email)}
-          {ticket.submitter_role ? (
-            <span className="text-slate-400 dark:text-slate-500"> · {ticket.submitter_role}</span>
-          ) : null}
-        </span>
+
+        {/* Stacked avatars: submitter + participants */}
+        <div className="flex items-center">
+          {visibleAvatars.map((u, i) => (
+            <div
+              key={u.email}
+              className={cn('ring-2 ring-white dark:ring-zinc-900 rounded-full flex-shrink-0', i > 0 && '-ml-1.5')}
+            >
+              <Avatar email={u.email} name={u.name} size="xs" />
+            </div>
+          ))}
+          {extraCount > 0 && (
+            <div className="-ml-1.5 w-5 h-5 rounded-full ring-2 ring-white dark:ring-zinc-900 bg-slate-100 dark:bg-neutral-800 flex items-center justify-center flex-shrink-0">
+              <span className="text-[9px] font-semibold text-slate-500 dark:text-slate-400">+{extraCount}</span>
+            </div>
+          )}
+        </div>
+
+        <span className="flex-1" />
+
         {ticket.comment_count > 0 && (
           <div className="flex items-center gap-0.5 text-slate-400 dark:text-slate-500 flex-shrink-0">
             <MessageCircle size={11} />
@@ -105,6 +152,7 @@ export function TicketKanbanCard({ ticket, onClick }: TicketKanbanCardProps) {
             {new Date(ticket.sla_deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           </span>
         )}
+        {ticket.status === 'open' && <AgentRingIndicator createdAt={ticket.created_at} />}
       </div>
     </div>
   )

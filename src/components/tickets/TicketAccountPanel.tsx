@@ -2,9 +2,8 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, ChevronDown, ChevronRight } from 'lucide-react'
+import { Search, ChevronDown, ChevronRight, Squircle, Triangle, Circle, Star } from 'lucide-react'
 import { cn, formatRelativeTime } from '@/lib/utils'
-import { Avatar } from '@/components/ui/Avatar'
 import { useTicketAccountFocus } from '@/lib/ticket-account-context'
 import axios from 'axios'
 import Cookies from 'js-cookie'
@@ -28,23 +27,51 @@ function authHeaders() {
 
 const ACTIVE_STATUSES = new Set(['open', 'auto_responded', 'in_review'])
 
-interface AccountEntry {
-  domain:        string
-  label:         string
-  openCount:     number
-  tickets:       TicketListItem[]
+const SHAPE_PALETTE: { icon: React.ElementType; color: string }[] = [
+  { icon: Triangle, color: 'text-green-500'  },
+  { icon: Circle,   color: 'text-violet-500' },
+  { icon: Star,     color: 'text-amber-500'  },
+  { icon: Squircle, color: 'text-blue-500'   },
+]
+
+function accountShape(key: string) {
+  let hash = 0
+  for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0
+  return SHAPE_PALETTE[hash % SHAPE_PALETTE.length]
 }
 
-function groupByDomain(tickets: TicketListItem[]): AccountEntry[] {
-  const map = new Map<string, TicketListItem[]>()
-  for (const t of tickets) {
-    const domain = emailToDomain(t.submitter_email)
-    if (!map.has(domain)) map.set(domain, [])
-    map.get(domain)!.push(t)
+interface AccountEntry {
+  key:       string
+  domain:    string
+  label:     string
+  openCount: number
+  tickets:   TicketListItem[]
+}
+
+function resolveAccount(t: TicketListItem): { key: string; label: string; domain: string } {
+  const cn = t.metadata?.company_name
+  if (cn) {
+    return {
+      key:    cn.toLowerCase(),
+      label:  cn,
+      domain: t.metadata?.company_domain ?? cn.toLowerCase(),
+    }
   }
-  return Array.from(map.entries()).map(([domain, list]) => ({
+  const domain = emailToDomain(t.submitter_email)
+  return { key: domain, label: domainToLabel(domain), domain }
+}
+
+function groupByAccount(tickets: TicketListItem[]): AccountEntry[] {
+  const map = new Map<string, { label: string; domain: string; tickets: TicketListItem[] }>()
+  for (const t of tickets) {
+    const { key, label, domain } = resolveAccount(t)
+    if (!map.has(key)) map.set(key, { label, domain, tickets: [] })
+    map.get(key)!.tickets.push(t)
+  }
+  return Array.from(map.entries()).map(([key, { label, domain, tickets: list }]) => ({
+    key,
     domain,
-    label:     domainToLabel(domain),
+    label,
     openCount: list.filter(t => ACTIVE_STATUSES.has(t.status)).length,
     tickets:   list,
   }))
@@ -63,6 +90,9 @@ function AccountItem({
 }) {
   const [open, setOpen] = useState(false)
   const recent = entry.tickets.slice(0, 3)
+  const shape     = accountShape(entry.key)
+  const ShapeIcon = shape.icon
+  const shapeColor = entry.openCount > 0 ? shape.color : 'text-stone-400 dark:text-stone-600'
 
   return (
     <div>
@@ -75,7 +105,7 @@ function AccountItem({
             : 'hover:bg-white/70 dark:hover:bg-neutral-800',
         )}
       >
-        <Avatar email={entry.domain} name={entry.label} size="xs" />
+        <ShapeIcon size={14} className={cn('flex-shrink-0', shapeColor)} strokeWidth={1.75} />
 
         <span className="flex-1 text-xs text-slate-500 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200 truncate leading-none">
           {entry.label}
@@ -101,6 +131,7 @@ function AccountItem({
               key={t.id}
               className="flex items-center gap-2 w-full px-2 py-1 rounded-lg text-left group/ticket"
             >
+              <Squircle size={13} className="shrink-0 text-stone-500 dark:text-slate-400" strokeWidth={1.5} />
               <span className="text-xs text-gray-500 dark:text-slate-400 group-hover/ticket:text-gray-700 dark:group-hover/ticket:text-slate-200 truncate">
                 {t.subject}
               </span>
@@ -135,10 +166,10 @@ export function TicketAccountPanel() {
     refetchInterval: 30_000,
   })
 
-  const accounts = groupByDomain(tickets)
+  const accounts = groupByAccount(tickets)
 
-  const active   = accounts.filter(a => a.openCount > 0)
-  const resolved = accounts.filter(a => a.openCount === 0)
+  const active   = accounts.filter((a: AccountEntry) => a.openCount > 0)
+  const resolved = accounts.filter((a: AccountEntry) => a.openCount === 0)
 
   const filter = (list: AccountEntry[]) =>
     searchQ
@@ -148,11 +179,11 @@ export function TicketAccountPanel() {
   const toggle = (s: string) => setOpenSections(p => ({ ...p, [s]: !p[s as keyof typeof p] }))
 
   function handleSelect(entry: AccountEntry) {
-    if (ticketFocus?.domain === entry.domain) {
+    if (ticketFocus?.domain === entry.key) {
       setTicketFocus(null)
     } else {
       setTicketFocus({
-        domain:        entry.domain,
+        domain:        entry.key,
         label:         entry.label,
         recentTickets: entry.tickets.slice(0, 3).map(t => ({
           id:         t.id,
@@ -199,9 +230,9 @@ export function TicketAccountPanel() {
           </button>
           {openSections.Active && filter(active).map(a => (
             <AccountItem
-              key={a.domain}
+              key={a.key}
               entry={a}
-              isActive={ticketFocus?.domain === a.domain}
+              isActive={ticketFocus?.domain === a.key}
               onSelect={() => handleSelect(a)}
             />
           ))}
@@ -226,9 +257,9 @@ export function TicketAccountPanel() {
           </button>
           {openSections.Resolved && filter(resolved).map(a => (
             <AccountItem
-              key={a.domain}
+              key={a.key}
               entry={a}
-              isActive={ticketFocus?.domain === a.domain}
+              isActive={ticketFocus?.domain === a.key}
               onSelect={() => handleSelect(a)}
             />
           ))}

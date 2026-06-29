@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { X, Send, Lock, Loader2, TriangleAlert } from 'lucide-react'
+import { X, Send, Lock, Loader2, TriangleAlert, CircleSlash2, CircleDashed, Plus, Ticket } from 'lucide-react'
 import { cn, formatRelativeTime } from '@/lib/utils'
 import { Avatar } from '@/components/ui/Avatar'
 import axios from 'axios'
@@ -10,6 +10,14 @@ import Cookies from 'js-cookie'
 import type { TicketListItem } from './TicketCard'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+interface TicketTask {
+  id:         number
+  title:      string
+  completed:  boolean
+  order:      number
+  created_at: string
+}
 
 interface TicketComment {
   id:           string
@@ -36,6 +44,21 @@ async function fetchDetail(id: string): Promise<TicketDetail> {
   return data
 }
 
+async function fetchTasks(id: string): Promise<TicketTask[]> {
+  const { data } = await axios.get(`/api/tickets/${id}/tasks/`, { headers: authHeaders() })
+  return data
+}
+
+async function toggleTask(ticketId: string, taskId: number): Promise<TicketTask> {
+  const { data } = await axios.patch(`/api/tickets/${ticketId}/tasks/${taskId}/`, {}, { headers: authHeaders() })
+  return data
+}
+
+async function createTask(ticketId: string, title: string): Promise<TicketTask> {
+  const { data } = await axios.post(`/api/tickets/${ticketId}/tasks/`, { title }, { headers: authHeaders() })
+  return data
+}
+
 async function postComment(id: string, body: string, type: string) {
   const { data } = await axios.post(
     `/api/tickets/${id}/comments/`,
@@ -58,9 +81,11 @@ function nameFromEmail(email: string): string {
 function SystemEvent({ comment }: { comment: TicketComment }) {
   return (
     <div className="flex items-start gap-2 py-1">
-      <div className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600 mt-2 flex-shrink-0" />
-      <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed">{comment.body}</p>
-      <span className="ml-auto text-[10px] text-slate-300 dark:text-slate-600 flex-shrink-0 mt-0.5">
+      <div className="flex-shrink-0 flex items-center justify-center text-cyan-500 mt-0.5">
+        <Ticket size={14} />
+      </div>
+      <p className="text-xs font-semibold text-slate-700 dark:text-slate-400 leading-relaxed">{comment.body}</p>
+      <span className="ml-auto text-xs text-slate-400 dark:text-slate-600 flex-shrink-0 mt-0.5">
         {formatRelativeTime(comment.created_at)}
       </span>
     </div>
@@ -71,8 +96,8 @@ function LLMResponse({ comment }: { comment: TicketComment }) {
   return (
     <div className="bg-slate-50 dark:bg-neutral-800 rounded-xl px-3 py-2.5 border border-slate-100 dark:border-neutral-700">
       <div className="flex items-center gap-1.5 mb-1.5">
-        <span className="text-[10px] font-semibold text-violet-600 dark:text-violet-400 uppercase tracking-wide">AI Auto-Response</span>
-        <span className="ml-auto text-[10px] text-slate-400 dark:text-slate-500">{formatRelativeTime(comment.created_at)}</span>
+        <span className="text-xs font-semibold text-violet-600 dark:text-violet-400">Auto-Response</span>
+        <span className="ml-auto text-xs text-slate-400 dark:text-slate-500">{formatRelativeTime(comment.created_at)}</span>
       </div>
       <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">{comment.body}</p>
     </div>
@@ -104,8 +129,8 @@ function InternalNote({ comment }: { comment: TicketComment }) {
     <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl px-3 py-2.5">
       <div className="flex items-center gap-1.5 mb-1">
         <Lock size={10} className="text-amber-600 dark:text-amber-400 flex-shrink-0" />
-        <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">Internal Note</span>
-        <span className="ml-auto text-[10px] text-amber-400 dark:text-amber-600">{formatRelativeTime(comment.created_at)}</span>
+        <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">Internal Note</span>
+        <span className="ml-auto text-xs text-amber-400 dark:text-amber-600">{formatRelativeTime(comment.created_at)}</span>
       </div>
       <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">{comment.body}</p>
     </div>
@@ -115,11 +140,11 @@ function InternalNote({ comment }: { comment: TicketComment }) {
 // ── Status / priority labels ──────────────────────────────────────────────────
 
 const STATUS_CHIP: Record<string, string> = {
-  open:           'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400',
-  auto_responded: 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400',
-  in_review:      'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400',
-  resolved:       'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400',
-  closed:         'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
+  open:           'bg-amber-500 text-white dark:bg-amber-950/40 dark:text-amber-400',
+  auto_responded: 'bg-violet-500 text-white dark:bg-violet-950/40 dark:text-violet-400',
+  in_review:      'bg-blue-500 text-white dark:bg-blue-950/40 dark:text-blue-400',
+  resolved:       'bg-emerald-500 text-white dark:bg-emerald-950/40 dark:text-emerald-400',
+  closed:         'bg-slate-500 text-white dark:bg-slate-800 dark:text-slate-400',
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -141,13 +166,21 @@ interface Props {
 export function TicketConversationPanel({ ticket, isSuperAdmin, onClose }: Props) {
   const qc           = useQueryClient()
   const threadRef    = useRef<HTMLDivElement>(null)
-  const [reply, setReply] = useState('')
-  const [noteMode, setNoteMode] = useState(false)
+  const [reply, setReply]         = useState('')
+  const [noteMode, setNoteMode]   = useState(false)
+  const [newTask, setNewTask]     = useState('')
+  const [addingTask, setAddingTask] = useState(false)
 
   const { data: detail, isLoading } = useQuery<TicketDetail>({
     queryKey: ['ticket-detail', ticket.id],
     queryFn:  () => fetchDetail(ticket.id),
     staleTime: 0,
+  })
+
+  const { data: tasks = [] } = useQuery<TicketTask[]>({
+    queryKey: ['ticket-tasks', ticket.id],
+    queryFn:  () => fetchTasks(ticket.id),
+    staleTime: 10_000,
   })
 
   // Scroll thread to bottom when comments load
@@ -166,27 +199,48 @@ export function TicketConversationPanel({ ticket, isSuperAdmin, onClose }: Props
     },
   })
 
+  const toggleMutation = useMutation({
+    mutationFn: (taskId: number) => toggleTask(ticket.id, taskId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['ticket-tasks', ticket.id] })
+      qc.invalidateQueries({ queryKey: ['ticket-list'] })
+    },
+  })
+
+  const addTaskMutation = useMutation({
+    mutationFn: (title: string) => createTask(ticket.id, title),
+    onSuccess: () => {
+      setNewTask('')
+      setAddingTask(false)
+      qc.invalidateQueries({ queryKey: ['ticket-tasks', ticket.id] })
+      qc.invalidateQueries({ queryKey: ['ticket-list'] })
+    },
+  })
+
   const name   = nameFromEmail(ticket.submitter_email)
   const status = STATUS_LABEL[ticket.status] ?? ticket.status
 
   return (
-    <div className="fixed top-0 right-0 bottom-0 z-50 flex flex-col w-[360px] bg-white dark:bg-neutral-900 border-l border-slate-100 dark:border-neutral-800 shadow-2xl">
+    <div className="fixed top-4 right-4 bottom-4 z-50 flex flex-col w-[380px] bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-700 shadow-2xl rounded-2xl overflow-hidden">
 
       {/* ── Header ── */}
-      <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-neutral-800">
-        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-          #{ticket.short_id}
-        </span>
+      <div className="flex-shrink-0 flex items-center gap-3 px-5 py-4 border-b border-slate-100 dark:border-neutral-800">
+        <div className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-2xl bg-cyan-50 dark:bg-cyan-950/40 text-cyan-500">
+          <Ticket size={14} />
+        </div>
+        <p className="flex-1 text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
+          {ticket.subject}
+        </p>
         <button
           onClick={onClose}
-          className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors"
+          className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors"
         >
           <X size={14} />
         </button>
       </div>
 
       {/* ── Profile section ── */}
-      <div className="flex-shrink-0 px-5 py-5 border-b border-slate-100 dark:border-neutral-800">
+      <div className="flex-shrink-0 px-5 py-5 border-none border-slate-100 dark:border-neutral-800">
         <div className="flex items-start gap-4">
           <Avatar
             email={ticket.submitter_email}
@@ -195,40 +249,115 @@ export function TicketConversationPanel({ ticket, isSuperAdmin, onClose }: Props
             square={false}
           />
           <div className="flex-1 min-w-0 pt-1">
-            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 leading-tight truncate">{name}</h2>
-            {ticket.submitter_role && (
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{ticket.submitter_role}</p>
-            )}
-            <p className="text-xs text-slate-400 dark:text-slate-500 truncate mt-0.5">{ticket.submitter_email}</p>
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100 leading-tight truncate">{name}</h2>
+            <div className="flex items-center gap-1.5 mt-0.5 text-xs text-slate-500 dark:text-slate-400 truncate">
+              {ticket.submitter_role && (
+                <span className="truncate">{ticket.submitter_role}</span>
+              )}
+              {ticket.submitter_role && ticket.submitter_email && (
+                <span className="text-slate-300 dark:text-slate-600">•</span>
+              )}
+              {ticket.submitter_email && (
+                <span className="truncate text-slate-500 dark:text-slate-500">{ticket.submitter_email}</span>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Ticket meta chips */}
         <div className="flex flex-wrap items-center gap-1.5 mt-3.5">
-          <span className={cn('text-[10px] font-semibold px-2 py-0.5 rounded-full', STATUS_CHIP[ticket.status])}>
+          <span className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-full', STATUS_CHIP[ticket.status])}>
             {status}
           </span>
           {ticket.priority === 'urgent' && (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-600 text-white">Urgent</span>
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-red-600 text-white">Urgent</span>
           )}
           {ticket.priority === 'high' && (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange-500 text-white">High</span>
+            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-orange-500 text-white">High</span>
           )}
           {ticket.sla_breached && (
             <span className="flex items-center gap-0.5 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400">
               <TriangleAlert size={9} />SLA
             </span>
           )}
-          <span className="text-[10px] text-slate-400 dark:text-slate-500 ml-auto">
+          <span className="text-xs text-slate-400 dark:text-slate-500 ml-auto">
             {formatRelativeTime(ticket.created_at)}
           </span>
         </div>
 
         {/* Subject */}
-        <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mt-2.5 leading-snug">
+        <p className="text-xs font-normal text-slate-800 dark:text-slate-300 mt-2.5 leading-snug">
           {ticket.subject}
         </p>
       </div>
+
+      {/* ── Task checklist ── */}
+      {(tasks.length > 0 || isSuperAdmin) && (
+        <div className="flex-shrink-0 border-none border-slate-100 dark:border-neutral-800 px-5 py-3">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-slate-800 dark:text-slate-500 mb-3">
+              {tasks.length > 0 && `${tasks.filter(t => t.completed).length} of ${tasks.length} Recommended Tasks Completed`}
+            </span>
+            {isSuperAdmin && !addingTask && (
+              <button
+                onClick={() => setAddingTask(true)}
+                className="flex items-center gap-0.5 text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              >
+                <Plus size={11} /> Add
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            {tasks.map(task => (
+              <div key={task.id} className="flex items-start gap-2 group/task">
+                <button
+                  onClick={() => isSuperAdmin && toggleMutation.mutate(task.id)}
+                  disabled={!isSuperAdmin || toggleMutation.isPending}
+                  className="flex-shrink-0 mt-0.5"
+                >
+                  {task.completed
+                    ? <CircleSlash2 size={16} className="text-cyan-600 dark:text-cyan-400" />
+                    : <CircleDashed size={16} className="text-slate-500 dark:text-slate-600 group-hover/task:text-slate-400" />
+                  }
+                </button>
+                <span className={cn(
+                  'text-xs leading-relaxed',
+                  task.completed
+                    ? 'line-through text-slate-400 dark:text-slate-600'
+                    : 'text-slate-700 dark:text-slate-300',
+                )}>
+                  {task.title}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {addingTask && (
+            <div className="flex items-center gap-2 mt-2">
+              <input
+                autoFocus
+                type="text"
+                value={newTask}
+                onChange={e => setNewTask(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && newTask.trim()) addTaskMutation.mutate(newTask.trim())
+                  if (e.key === 'Escape') { setAddingTask(false); setNewTask('') }
+                }}
+                placeholder="Task title… (Enter to save)"
+                className="flex-1 text-xs px-2 py-1 rounded-lg border border-slate-200 dark:border-neutral-700 bg-slate-50 dark:bg-neutral-800 text-slate-700 dark:text-slate-300 placeholder:text-slate-400 outline-none focus:border-cyan-400"
+              />
+              <button
+                onClick={() => newTask.trim() && addTaskMutation.mutate(newTask.trim())}
+                disabled={!newTask.trim() || addTaskMutation.isPending}
+                className="px-2 py-1 text-[10px] rounded-lg bg-cyan-500 text-white hover:bg-cyan-600 disabled:opacity-50 transition-colors"
+              >
+                {addTaskMutation.isPending ? <Loader2 size={11} className="animate-spin" /> : 'Save'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Thread ── */}
       <div
@@ -264,7 +393,7 @@ export function TicketConversationPanel({ ticket, isSuperAdmin, onClose }: Props
               <button
                 onClick={() => setNoteMode(false)}
                 className={cn(
-                  'text-[11px] px-2.5 py-0.5 rounded-full transition-colors',
+                  'text-xs px-2.5 py-0.5 rounded-full transition-colors',
                   !noteMode
                     ? 'bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 font-semibold'
                     : 'text-slate-400 dark:text-slate-500 hover:text-slate-600',
@@ -275,7 +404,7 @@ export function TicketConversationPanel({ ticket, isSuperAdmin, onClose }: Props
               <button
                 onClick={() => setNoteMode(true)}
                 className={cn(
-                  'text-[11px] px-2.5 py-0.5 rounded-full transition-colors',
+                  'text-xs px-2.5 py-0.5 rounded-full transition-colors',
                   noteMode
                     ? 'bg-amber-500 text-white font-semibold'
                     : 'text-slate-400 dark:text-slate-500 hover:text-slate-600',

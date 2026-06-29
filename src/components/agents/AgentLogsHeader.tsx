@@ -1,15 +1,20 @@
 'use client'
 
+import { LayoutList, Network } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { AgentMeta } from './AgentMeta'
 import { resolveStatus } from './AgentStatusUtils'
 
+export type AgentView = 'list' | 'network'
+
 interface AgentLogsHeaderProps {
   meta: AgentMeta
   logs: any[]
+  view: AgentView
+  onViewChange: (v: AgentView) => void
 }
 
-export function AgentLogsHeader({ meta, logs }: AgentLogsHeaderProps) {
+export function AgentLogsHeader({ meta, logs, view, onViewChange }: AgentLogsHeaderProps) {
   const Icon = meta.icon
 
   const hasLive      = logs.some(l => resolveStatus(l.status, l.created) === 'running')
@@ -34,6 +39,34 @@ export function AgentLogsHeader({ meta, logs }: AgentLogsHeaderProps) {
             Live
           </span>
         )}
+
+        {/* View toggle */}
+        <div className="ml-auto flex items-center gap-0.5 bg-slate-100 dark:bg-neutral-800 rounded-lg p-0.5">
+          <button
+            onClick={() => onViewChange('list')}
+            title="Log cards"
+            className={cn(
+              'w-7 h-7 flex items-center justify-center rounded-md transition-colors',
+              view === 'list'
+                ? 'bg-white dark:bg-neutral-700 text-slate-700 dark:text-slate-200 shadow-sm'
+                : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+            )}
+          >
+            <LayoutList size={14} strokeWidth={1.75} />
+          </button>
+          <button
+            onClick={() => onViewChange('network')}
+            title="Pipeline network"
+            className={cn(
+              'w-7 h-7 flex items-center justify-center rounded-md transition-colors',
+              view === 'network'
+                ? 'bg-white dark:bg-neutral-700 text-slate-700 dark:text-slate-200 shadow-sm'
+                : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+            )}
+          >
+            <Network size={14} strokeWidth={1.75} />
+          </button>
+        </div>
       </div>
 
       {/* Stats row */}

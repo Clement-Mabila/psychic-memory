@@ -8,6 +8,7 @@ import { MoreHorizontal, Star, Search, AudioLines, CirclePlay, Circle, Octagon, 
 import api from '@/lib/api'
 import { useAgentFocus } from '@/lib/agent-focus-context'
 import { useTicketAccountFocus } from '@/lib/ticket-account-context'
+import { AddTicketModal } from '@/components/tickets/AddTicketModal'
 import { AgentLogsPanel } from '@/components/agents/AgentLogsPanel'
 import { LiveRunPanel } from '@/components/agents/LiveRunPanel'
 import { ThemeToggle } from '@/components/theme/theme-toggle'
@@ -48,7 +49,7 @@ const STATUS_STYLE: Record<string, { dot: string; label: string }> = {
 function TicketsPageHeader({ className }: { className?: string }) {
   const { ticketFocus } = useTicketAccountFocus()
   const accountName     = ticketFocus?.label ?? 'All Tickets'
-  const recentTickets   = ticketFocus?.recentTickets ?? []
+  const [addModalOpen, setAddModalOpen] = useState(false)
 
   // Fetch ticket list for submitter avatars + stats
   const { data: tickets = [] } = useQuery<any[]>({
@@ -67,6 +68,11 @@ function TicketsPageHeader({ className }: { className?: string }) {
   const domainTickets = ticketFocus
     ? tickets.filter((t: any) => t.submitter_email?.split('@')[1] === ticketFocus.domain)
     : tickets
+
+  // 3 most recent tickets — mirrors recentLeads in AgentPageHeader (always from live data)
+  const recentTickets = [...domainTickets]
+    .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 3)
 
   const openCount    = domainTickets.filter((t: any) => t.status === 'open' || t.status === 'auto_responded' || t.status === 'in_review').length
   const slaCount     = domainTickets.filter((t: any) => t.sla_breached).length
@@ -88,6 +94,7 @@ function TicketsPageHeader({ className }: { className?: string }) {
   const extraCount = Math.max(0, seenEmails.size - 3)
 
   return (
+    <>
     <header className={cn('bg-white border-b border-gray-100 px-8 pt-8 pb-5 flex-shrink-0 dark:bg-neutral-900 dark:border-neutral-900', className)}>
 
       {/* Title row */}
@@ -95,12 +102,6 @@ function TicketsPageHeader({ className }: { className?: string }) {
         <div className="flex items-center gap-2.5">
           <Squircle size={16} className="flex-shrink-0 text-violet-500" strokeWidth={1.75} />
           <h1 className="text-xl font-bold text-gray-900 tracking-tight dark:text-slate-100">{accountName}</h1>
-          {openCount > 0 && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 dark:bg-amber-950/30 dark:text-amber-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-              {openCount} active
-            </span>
-          )}
         </div>
 
         {/* Right: theme + search + star + more */}
@@ -118,17 +119,17 @@ function TicketsPageHeader({ className }: { className?: string }) {
         </div>
       </div>
 
-      {/* Recent tickets breadcrumb — same position as recent leads */}
+      {/* Recent tickets breadcrumb — mirrors recent leads in AgentPageHeader */}
       <div className="pl-6 mb-5 min-h-[18px]">
         {recentTickets.length > 0 && (
           <div className="flex items-center gap-1.5">
             <span className="text-gray-300 text-xs select-none dark:text-slate-600">└</span>
-            {recentTickets.map((t, i) => (
+            {recentTickets.map((t: any, i: number) => (
               <span key={t.id} className="flex items-center gap-1.5">
                 {i > 0 && <span className="text-gray-300 text-xs dark:text-slate-600">/</span>}
                 <span className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 dark:hover:text-slate-300 cursor-pointer transition-colors">
-                  <span className="w-3 h-3 rounded-sm border border-gray-300 dark:border-slate-600 flex-shrink-0" />
-                  {t.subject.length > 32 ? t.subject.slice(0, 32) + '…' : t.subject}
+                  <span className="w-3 h-3 rounded-sm border border-gray-300 dark:border-slate-600 flex-shrink-0 dark:border-slate-600" />
+                  {t.subject.length > 24 ? t.subject.slice(0, 24) + '…' : t.subject}
                 </span>
               </span>
             ))}
@@ -145,7 +146,7 @@ function TicketsPageHeader({ className }: { className?: string }) {
           {openCount > 0 && (
             <>
               <span className="text-gray-200 text-xs dark:text-slate-700">·</span>
-              <span className="text-xs text-amber-500 dark:text-amber-400 font-medium">{openCount} open</span>
+              <span className="text-xs text-gray-400 dark:text-slate-500"><span className="text-gray-600 font-medium dark:text-slate-300">{openCount}</span> open</span>
             </>
           )}
           {slaCount > 0 && (
@@ -172,8 +173,10 @@ function TicketsPageHeader({ className }: { className?: string }) {
               )}
             </div>
           )}
+          <div className="w-px h-6 bg-gray-200 dark:bg-neutral-700 mx-1" />
           <button
             title="New Ticket"
+            onClick={() => setAddModalOpen(true)}
             className="h-9 w-9 flex items-center justify-center rounded-2xl font-medium transition-colors bg-cyan-500 text-white hover:bg-cyan-600"
           >
             <Plus size={16} strokeWidth={2} />
@@ -182,21 +185,121 @@ function TicketsPageHeader({ className }: { className?: string }) {
       </div>
 
     </header>
+
+    {addModalOpen && <AddTicketModal onClose={() => setAddModalOpen(false)} />}
+  </>
   )
 }
 
-// ── Agent header (original) ───────────────────────────────────────────────────
+// ── Leads header ─────────────────────────────────────────────────────────────
 
-export function PageHeader({ className }: PageHeaderProps) {
-  const pathname         = usePathname()
+function LeadsPageHeader({ className }: { className?: string }) {
+  const { data: repsData } = useQuery<any[]>({
+    queryKey: ['reps'],
+    queryFn:  () => api.get('/reps').then(r => r.data.reps),
+    staleTime: 60_000,
+  })
+
+  const { data: leadsData } = useQuery<any>({
+    queryKey: ['leads-header'],
+    queryFn:  () => api.get('/leads', { params: { page_size: 3, page: 1 } }).then(r => r.data),
+    staleTime: 30_000,
+  })
+
+  const reps: any[]      = repsData ?? []
+  const recentLeads: any[] = leadsData?.leads?.slice(0, 3) ?? []
+  const total: number    = leadsData?.total ?? 0
+
+  const visibleReps = reps.slice(0, 3)
+  const extraCount  = Math.max(0, reps.length - 3)
+
+  return (
+    <header className={cn('bg-white border-b border-gray-100 px-8 pt-8 pb-5 flex-shrink-0 dark:bg-neutral-900 dark:border-neutral-900', className)}>
+
+      {/* Title row */}
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-2.5">
+          <Squircle size={16} className="flex-shrink-0 text-rose-500" strokeWidth={1.75} />
+          <h1 className="text-xl font-bold text-gray-900 tracking-tight dark:text-slate-100">Leads</h1>
+        </div>
+
+        <div className="flex items-center gap-0.5">
+          <ThemeToggle />
+          <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:text-slate-300 transition-colors">
+            <Search size={16} strokeWidth={1.75} />
+          </button>
+          <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-yellow-400 dark:hover:text-yellow-500 transition-colors">
+            <Star size={16} strokeWidth={1.75} />
+          </button>
+          <button className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 dark:hover:bg-slate-800 dark:hover:text-slate-300 transition-colors">
+            <MoreHorizontal size={16} strokeWidth={1.75} />
+          </button>
+        </div>
+      </div>
+
+      {/* Recent leads breadcrumb */}
+      <div className="pl-6 mb-5 min-h-[18px]">
+        {recentLeads.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-gray-300 text-xs select-none dark:text-slate-600">└</span>
+            {recentLeads.map((lead: any, i: number) => (
+              <span key={lead.id} className="flex items-center gap-1.5">
+                {i > 0 && <span className="text-gray-300 text-xs dark:text-slate-600">/</span>}
+                <span className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 dark:hover:text-slate-300 cursor-pointer transition-colors">
+                  <span className="w-3 h-3 rounded-sm border border-gray-300 dark:border-slate-600 flex-shrink-0" />
+                  {lead.company_name?.length > 24 ? lead.company_name.slice(0, 24) + '…' : lead.company_name}
+                </span>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Stats + rep avatars */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          {total > 0 && (
+            <span className="text-xs text-gray-400 dark:text-slate-500">
+              <span className="text-gray-600 font-medium dark:text-slate-300">{total}</span> leads
+            </span>
+          )}
+          {reps.length > 0 && (
+            <>
+              {total > 0 && <span className="text-gray-200 text-xs dark:text-slate-700">·</span>}
+              <span className="text-xs text-gray-400 dark:text-slate-500">
+                <span className="text-gray-600 font-medium dark:text-slate-300">{reps.length}</span> reps active
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Rep avatar stack */}
+        {visibleReps.length > 0 && (
+          <div className="flex items-center">
+            {visibleReps.map((r, i) => (
+              <div key={r.id} className={cn('ring-2 ring-white dark:ring-neutral-900 rounded-full', i > 0 && '-ml-2')}>
+                <Avatar name={r.full_name} email={r.email} size="sm" />
+              </div>
+            ))}
+            {extraCount > 0 && (
+              <div className="-ml-2 w-8 h-8 rounded-full ring-2 ring-white dark:ring-neutral-900 bg-slate-100 dark:bg-neutral-800 flex items-center justify-center">
+                <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">+{extraCount}</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+    </header>
+  )
+}
+
+// ── Agent header ─────────────────────────────────────────────────────────────
+
+function AgentPageHeader({ className }: { className?: string }) {
   const { focusedAgent } = useAgentFocus()
   const router           = useRouter()
   const [logsOpen, setLogsOpen] = useState(false)
-
-  // Delegate to tickets header on /tickets
-  if (pathname.startsWith('/tickets')) {
-    return <TicketsPageHeader className={className} />
-  }
 
   const { data } = useQuery({
     queryKey: ['sidebar-agents'],
@@ -386,4 +489,13 @@ export function PageHeader({ className }: PageHeaderProps) {
     )}
   </>
   )
+}
+
+// ── Router ────────────────────────────────────────────────────────────────────
+
+export function PageHeader({ className }: PageHeaderProps) {
+  const pathname = usePathname()
+  if (pathname.startsWith('/tickets')) return <TicketsPageHeader className={className} />
+  if (pathname.startsWith('/leads'))   return <LeadsPageHeader   className={className} />
+  return <AgentPageHeader className={className} />
 }
