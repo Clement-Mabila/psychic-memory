@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import api from '@/lib/api'
+import api, { securityApi } from '@/lib/api'
 import LeadCard from '@/components/leads/LeadCard'
 import LeadTable from '@/components/leads/LeadTable'
 import GroupPickerModal from '@/components/leads/GroupPickerModal'
@@ -637,8 +637,18 @@ function KanbanColumn({
   )
 }
 
+const TECHNICAL_ROLES = ['super_admin', 'admin', 'manager', 'analyst']
+
 export default function LeadsPage() {
   const qc = useQueryClient()
+
+  const { data: me } = useQuery({
+    queryKey: ['security-me'],
+    queryFn:  securityApi.getMe,
+    staleTime: 300_000,
+  })
+  const isTechnicalUser = TECHNICAL_ROLES.includes(me?.role ?? '')
+
   const [view,          setView]          = useState<ViewMode>('kanban')
   const [groupViewMode, setGroupViewMode] = useState<'kanban' | 'table'>('kanban')
   const [search,      setSearch]      = useState('')
@@ -651,6 +661,7 @@ export default function LeadsPage() {
   const [showCreateGroup,    setShowCreateGroup]     = useState(false)
   const [detailLeadId,       setDetailLeadId]        = useState<string | null>(null)
   const [cardStyle, setCardStyle] = useState<'technical' | 'non-technical'>('technical')
+  const effectiveCardStyle = isTechnicalUser ? cardStyle : 'non-technical'
   const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set())
 
   const filterParams = rulesToParams(filterRules)
@@ -798,11 +809,11 @@ export default function LeadsPage() {
               <PlusCircle className="h-4 w-4 text-white" />
             </button>
           )}
-          {view === 'kanban' && (
+          {view === 'kanban' && isTechnicalUser && (
             <>
               {([
                 { id: 'technical',     label: 'Companies', Icon: Building2 },
-                { id: 'non-technical', label: 'Deals',   Icon: Handshake },
+                { id: 'non-technical', label: 'Deals',     Icon: Handshake },
               ] as const).map(({ id, label, Icon }) => (
                 <button
                   key={id}
@@ -892,7 +903,7 @@ export default function LeadsPage() {
               onSelect={toggleSelect}
               onOpen={id => setDetailLeadId(id)}
               onSetGroup={id => setGroupPickerLeadId(id)}
-              cardStyle={cardStyle}
+              cardStyle={effectiveCardStyle}
               onHide={() => setHiddenColumns(s => new Set([...s, col.id]))}
             />
           ))}

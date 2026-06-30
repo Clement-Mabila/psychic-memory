@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
-  Play, RotateCcw, MoreVertical, MapPin, Map, MapMinus, Link2, Circle, Octagon, Pentagon,
+  Play, RotateCcw, MoreVertical, MapPin, Link2, Circle, Octagon, Pentagon,
   Squircle, Aperture, Atom, Users, MessageSquare, Copy, Check, Phone, PhoneOff,
   Building2, LibraryBig, Info, MousePointerClick, Cloud, Earth, ChevronUp,
   ChevronDown, BadgeInfo,
@@ -324,7 +324,7 @@ function RepPicker({ lead }: { lead: any }) {
         onClick={e => { e.stopPropagation(); setOpen(o => !o) }}
         className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 w-full disabled:opacity-50"
       >
-        <Avatar name={rep?.full_name} email={rep?.email} size="xxxs" className="flex-shrink-0" />
+        <Avatar name={rep?.full_name} email={rep?.email} size="xxxs" className="flex-shrink-0 rounded-lg" />
         <span className="truncate">{rep ? (rep.full_name as string).split(' ')[0] : 'Assign rep'}</span>
         <ChevronDown size={10} className="flex-shrink-0 ml-auto text-slate-400 dark:text-slate-500" />
       </button>
@@ -573,7 +573,7 @@ function NonTechnicalLeadCard({
   return (
     <div
       className={cn(
-        'bg-white dark:bg-zinc-950 rounded-2xl p-4 cursor-pointer group relative transition-shadow hover:shadow-sm dark:shadow-none',
+        'bg-white dark:bg-zinc-900 dark:border dark:border-zinc-600/20 rounded-2xl p-4 cursor-pointer group relative transition-shadow hover:shadow-sm dark:shadow-none',
         selected && 'ring-2 ring-indigo-400 dark:ring-indigo-500'
       )}
       onClick={() => onOpen ? onOpen(lead.id) : onSelect(lead.id)}
@@ -600,9 +600,9 @@ function NonTechnicalLeadCard({
                     href={`https://${lead.domain}`}
                     target="_blank" rel="noopener noreferrer"
                     title={lead.domain}
-                    className="w-5 h-5 flex items-center justify-center rounded-md bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:opacity-80 transition-opacity"
+                    className="w-5 h-5 flex items-center justify-center rounded-md bg-blue-100 dark:bg-zinc-700/40 text-blue-600 dark:text-blue-400 hover:opacity-80 transition-opacity"
                   >
-                    <Earth className="h-3 w-3" />
+                    <Earth className="h-3.5 w-3.5" />
                   </a>
                 )}
                 {linkedInUrl && (
@@ -610,9 +610,9 @@ function NonTechnicalLeadCard({
                     href={linkedInUrl}
                     target="_blank" rel="noopener noreferrer"
                     title={representative?.name ? `${representative.name} on LinkedIn` : 'LinkedIn'}
-                    className="w-5 h-5 flex items-center justify-center rounded-md bg-blue-100 dark:bg-blue-950/40 hover:opacity-80 transition-opacity"
+                    className="w-5 h-5 flex items-center justify-center rounded-md bg-blue-100 dark:bg-zinc-700/40 text-blue-600 dark:text-blue-400 hover:opacity-80 transition-opacity"
                   >
-                    <img src="/linkedin.svg" className="h-3.5 w-3.5" alt="LinkedIn" />
+                    <img src="/linkedin.svg" className="h-4 w-4" alt="LinkedIn" />
                   </a>
                 )}
                 {hqPhone && (
@@ -621,7 +621,7 @@ function NonTechnicalLeadCard({
                     title={hqPhone}
                     className="w-5 h-5 flex items-center justify-center rounded-md bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400 hover:opacity-80 transition-opacity"
                   >
-                    <Phone className="h-2.5 w-2.5" />
+                    <Phone className="h-3 w-3" />
                   </a>
                 )}
                 {lead.crm_record_id && (
@@ -632,7 +632,7 @@ function NonTechnicalLeadCard({
                       title="HubSpot CRM"
                       className="w-5 h-5 flex items-center justify-center rounded-md bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400 hover:opacity-80 transition-opacity"
                     >
-                      <Cloud className="h-3 w-3" />
+                      <Cloud className="h-3.5 w-3.5" />
                     </a>
                     <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-orange-500 ring-1 ring-white dark:ring-zinc-900" />
                   </div>
@@ -664,8 +664,8 @@ function NonTechnicalLeadCard({
         </div>
         {lead.vertical && (
           <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <span className="w-5 h-5 flex items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950/40 text-blue-500 dark:text-blue-400 flex-shrink-0">
-              <LibraryBig size={13} />
+            <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950/40 text-blue-500 dark:text-blue-400 flex-shrink-0">
+              <LibraryBig size={15} />
             </span>
             <span className="truncate">
               {lead.vertical.charAt(0).toUpperCase() + lead.vertical.slice(1)}
@@ -674,8 +674,8 @@ function NonTechnicalLeadCard({
         )}
         {lead.industry && lead.industry !== lead.vertical && (
           <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <span className="w-5 h-5 flex items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950/40 text-blue-500 dark:text-blue-400 flex-shrink-0">
-              <LibraryBig size={13} />
+            <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950/40 text-blue-500 dark:text-blue-400 flex-shrink-0">
+              <LibraryBig size={15} />
             </span>
             <span className="capitalize truncate">{lead.industry}</span>
           </div>
@@ -683,8 +683,8 @@ function NonTechnicalLeadCard({
         {location && (
           <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
             <div className="relative flex-shrink-0">
-              <span className="w-5 h-5 flex items-center justify-center rounded-lg bg-stone-300 dark:bg-neutral-800 text-gray-400 dark:text-slate-500">
-                <MapMinus size={13} />
+              <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-stone-300 dark:bg-neutral-800 text-gray-400 dark:text-slate-500">
+                <MapPin size={15} />
               </span>
               <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-400 ring-1 ring-white dark:ring-zinc-900" />
             </div>
@@ -693,8 +693,8 @@ function NonTechnicalLeadCard({
         )}
         {(employeeFmt || lead.revenue_range) && (
           <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <span className="w-5 h-5 flex items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-950/40 text-rose-500 dark:text-rose-400 flex-shrink-0">
-              <BadgeInfo size={13} />
+            <span className="w-6 h-6 flex items-center justify-center rounded-lg bg-violet-100 dark:bg-violet-950/40 text-violet-500 dark:text-violet-400 flex-shrink-0">
+              <BadgeInfo size={15} />
             </span>
             <span className="truncate">
               {[lead.revenue_range, employeeFmt ? `${employeeFmt} employees` : null].filter(Boolean).join(' · ')}

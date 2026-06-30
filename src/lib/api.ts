@@ -62,8 +62,12 @@ export function isAuthenticated() {
 
 // ── Leads ─────────────────────────────────────────────────────────────────
 export const leadApi = {
-  getDetail: (id: string)                            => api.get(`/leads/${id}`).then(r => r.data),
-  update:    (id: string, data: Record<string, any>) => api.patch(`/leads/${id}/update`, data).then(r => r.data),
+  getDetail:      (id: string)                            => api.get(`/leads/${id}`).then(r => r.data),
+  update:         (id: string, data: Record<string, any>) => api.patch(`/leads/${id}/update`, data).then(r => r.data),
+  getFavorites:   ()            => api.get('/leads/favorites').then(r => r.data),
+  getBookmarks:   ()            => api.get('/leads/bookmarks').then(r => r.data),
+  toggleFavorite: (id: string)  => api.post(`/leads/${id}/favorite`).then(r => r.data),
+  toggleBookmark: (id: string)  => api.post(`/leads/${id}/bookmark`).then(r => r.data),
 }
 
 // ── Vault ──────────────────────────────────────────────────────────────────

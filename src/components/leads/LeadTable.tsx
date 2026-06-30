@@ -114,16 +114,16 @@ function ActionsMenu({ lead, onRun, onRerun, onRunOnly, onSetGroup }: { lead: an
 }
 
 // ── Column header ─────────────────────────────────────────────────────────────
-const HEADERS: { label: string; info?: boolean }[] = [
+const HEADERS: { label: string; info?: boolean; infoBefore?: boolean }[] = [
   { label: 'Company' },
-  { label: 'Domain',   info: true },
-  { label: 'Vertical' },
+  { label: 'Domain',    info: true },
+  { label: 'Vertical',  infoBefore: true },
   { label: 'Stage' },
   { label: 'Score' },
   { label: 'Priority' },
   { label: 'Location' },
   { label: 'Group' },
-  { label: 'Modified', info: true },
+  { label: 'Modified',  info: true },
   { label: '' },
 ]
 
@@ -159,6 +159,7 @@ export default function LeadTable({ leads, isLoading, selected, onToggleAll, onT
             {HEADERS.map(h => (
               <th key={h.label} className="px-4 py-4 text-left text-sm font-medium text-black dark:text-slate-100 whitespace-nowrap">
                 <div className="flex items-center gap-1.5">
+                  {h.infoBefore && <Info className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 flex-shrink-0" />}
                   {h.label}
                   {h.info && <Info className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 flex-shrink-0" />}
                 </div>

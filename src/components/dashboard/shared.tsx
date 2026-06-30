@@ -41,6 +41,13 @@ export interface InvestorData {
     hq_city: string; hq_country: string
     company_count: number; sql_count: number
     primary_vertical?: string | null
+    has_group_parent: boolean
+    companies: {
+      id: string; name: string; domain: string
+      summary: string; is_group_parent: boolean
+      group_name: string | null; stage: string
+      score: number | null
+    }[]
   }[]
   company_groups:  CompanyGroup[]
   ungrouped_leads: UngroupedLead[]

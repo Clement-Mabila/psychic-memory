@@ -8,19 +8,19 @@ import { cn, formatRelativeTime } from '@/lib/utils'
 import {
   LayoutGrid, Users, Clock, ShieldCheck, Cog, LogOut, Atom,
   Contact, WalletCards, Layers2, Waypoints, PanelRight, Search,
-  ChevronDown, ChevronRight, Squircle, Circle, SwatchBook, Gauge, FolderClock,
+  ChevronDown, ChevronRight, Squircle, Circle, SwatchBook, FolderClock,
 } from 'lucide-react'
 import axios from 'axios'
 import Cookies from 'js-cookie'
+import { Avatar } from '@/components/ui/Avatar'
 import { ChatPanel } from '@/components/chat/ChatPanel'
 import dynamic from 'next/dynamic'
 const TicketAccountPanelLazy = dynamic(
   () => import('@/components/tickets/TicketAccountPanel').then(m => m.TicketAccountPanel),
   { ssr: false },
 )
-import { logout } from '@/lib/api'
+import { logout, securityApi } from '@/lib/api'
 import api from '@/lib/api'
-import { UsageModal } from '@/components/layout/UsageModal'
 import { useAgentFocus } from '@/lib/agent-focus-context'
 import { useAgentSelection } from '@/lib/agent-selection-context'
 import { AGENT_META } from '@/components/agents/AgentMeta'
@@ -48,27 +48,39 @@ function OllamaIcon({ size = 19 }: { size?: number }) {
   )
 }
 
+// ── Role tiers ────────────────────────────────────────────────────────────────
+const T = {
+  all:   ['super_admin','admin','manager','analyst','reviewer','auditor','read_only','viewer','sales_rep'],
+  // client-facing roles: sales_rep + internal staff (not read_only/viewer)
+  crm:   ['super_admin','admin','manager','analyst','reviewer','auditor','sales_rep'],
+  // internal staff only (logs, audit trail) — no sales_rep
+  staff: ['super_admin','admin','manager','analyst','reviewer','auditor'],
+  ops:   ['super_admin','admin','manager','analyst'],
+  power: ['super_admin','admin','manager'],
+  admin: ['super_admin','admin'],
+} as const
+
 // ── Nav sections ──────────────────────────────────────────────────────────────
 const NAV_SECTIONS = [
   [
-    { label: 'Overview',    href: '/dashboard',   icon: LayoutGrid  },
-    { label: 'Leads',        href: '/leads',        icon: Users       },
-    { label: 'Contacts',     href: '/contacts',     icon: Contact     },
-    { label: 'Tickets',      href: '/tickets',      icon: FolderClock       },
-    { label: 'AI',  href: '/ai',           icon: AiSoundIcon },
+    { label: 'Overview',     href: '/dashboard',  icon: LayoutGrid,  roles: T.all },
+    { label: 'Leads',        href: '/leads',       icon: Users,       roles: T.crm },
+    { label: 'Contacts',     href: '/contacts',    icon: Contact,     roles: T.crm },
+    { label: 'Tickets',      href: '/tickets',     icon: FolderClock, roles: T.all },
+    { label: 'AI',           href: '/ai',          icon: AiSoundIcon, roles: T.crm },
   ],
   [
-    { label: 'Agents',       href: '/agents/logs',  icon: Atom        },
-    { label: 'Logs Trail',   href: '/agents/run',   icon: SwatchBook  },
-    { label: 'Scheduler',    href: '/scheduler',    icon: Clock       },
-    { label: 'Critics',      href: '/critics',      icon: ShieldCheck },
-    { label: 'Intelligence', href: '/training',     icon: OllamaIcon  },
+    { label: 'Agents',       href: '/agents/logs', icon: Atom,        roles: T.ops   },
+    { label: 'Logs Trail',   href: '/agents/run',  icon: SwatchBook,  roles: T.staff },
+    { label: 'Scheduler',    href: '/scheduler',   icon: Clock,       roles: T.power },
+    { label: 'Critics',      href: '/critics',     icon: ShieldCheck, roles: T.power },
+    { label: 'Intelligence', href: '/training',    icon: OllamaIcon,  roles: T.power },
   ],
   [
-    { label: 'Datasets',     href: '/vault',     icon: Layers2     },
-    { label: 'Security',     href: '/security',     icon: Waypoints        },
-    { label: 'Costs',        href: '/costs',        icon: WalletCards  },
-    { label: 'Config',       href: '/settings',     icon: Cog         },
+    { label: 'Datasets',     href: '/vault',       icon: Layers2,     roles: T.ops   },
+    { label: 'Security',     href: '/security',    icon: Waypoints,   roles: T.admin },
+    { label: 'Costs',        href: '/costs',       icon: WalletCards, roles: T.power },
+    { label: 'Config',       href: '/settings',    icon: Cog,         roles: T.power },
   ],
 ]
 
@@ -332,7 +344,7 @@ function AgentPanel() {
             {openSections.LLM
               ? <ChevronDown  size={13} className="text-slate-500 dark:text-slate-400" />
               : <ChevronRight size={13} className="text-slate-500 dark:text-slate-400" />}
-            <span className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">MBody Models</span>
+            <span className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">MBody AI</span>
           </button>
           {openSections.LLM && filter(llm).map(a => (
             <AgentItem key={a.agent_type} agent={a}
@@ -356,8 +368,32 @@ export function Sidebar() {
   // expanded: true = 224px, false = 72px (icon rail)
   const [expanded, setExpanded]     = useState(true)
   const [chatOpen, setChatOpen]     = useState(false)
-  const [usageOpen, setUsageOpen]   = useState(false)
-  const mounted = useRef(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const mounted     = useRef(false)
+  const userMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const { data: me } = useQuery({
+    queryKey: ['security-me'],
+    queryFn:  securityApi.getMe,
+    staleTime: 300_000,
+  })
+  const userRole = (me?.role ?? null) as string | null
+
+  // While role is loading, show everything to avoid flicker
+  function canSee(roles: readonly string[]): boolean {
+    if (!userRole) return true
+    return (roles as string[]).includes(userRole)
+  }
 
   const { data: usageData } = useQuery<{ budget_pct_used: number | null; alert_at_pct: number }>({
     queryKey: ['my-usage', '30d'],
@@ -427,7 +463,7 @@ export function Sidebar() {
           {expanded && (
             <div className="flex items-center gap-1">
               <img src="/Logo.svg" alt="MBody" className="w-10 h-10" />
-              <span className="text-sm font-semibold text-slate-900 dark:text-white tracking-tight">Construct Lyra</span>
+              <span className="text-sm font-semibold text-slate-900 dark:text-white tracking-tight">MBody AI</span>
             </div>
           )}
           <button
@@ -443,80 +479,114 @@ export function Sidebar() {
 
         {/* Nav */}
         <nav className="flex flex-col flex-1 px-3 mt-1 overflow-y-auto">
-          {NAV_SECTIONS.map((section, si) => (
-            <div key={si}>
-              <div className="flex flex-col gap-0.5">
-                {section.map(item => (
-                  <NavItem key={item.href} {...item} iconOnly={iconOnly} />
-                ))}
+          {NAV_SECTIONS.map((section, si) => {
+            const visible = section.filter(item => canSee(item.roles))
+            if (visible.length === 0) return null
+            const nextSectionsHaveItems = NAV_SECTIONS.slice(si + 1).some(s => s.some(i => canSee(i.roles)))
+            return (
+              <div key={si}>
+                <div className="flex flex-col gap-0.5">
+                  {visible.map(item => (
+                    <NavItem key={item.href} {...item} iconOnly={iconOnly} />
+                  ))}
+                </div>
+                {nextSectionsHaveItems && <FadingDivider />}
               </div>
-              {si < NAV_SECTIONS.length - 1 && <FadingDivider />}
-            </div>
-          ))}
+            )
+          })}
         </nav>
 
         <FadingDivider />
 
-        {/* Usage pill */}
-        <div className="px-3 pb-1">
-          {expanded ? (
-            <button onClick={() => setUsageOpen(true)}
-              className="group flex items-center gap-3 w-full rounded-full px-3 py-2 transition-all hover:bg-gray-50 dark:hover:bg-neutral-800 text-left"
-            >
-              <span className="flex items-center justify-center w-5 h-5 shrink-0 text-slate-400 group-hover:text-cyan-600 transition-colors">
-                <Gauge size={15} strokeWidth={1.5} />
-              </span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300">My usage</span>
-                  {usagePct != null && (
-                    <span className={cn(
-                      'text-xs tabular-nums',
-                      usagePct >= alertPct ? 'text-amber-500' : 'text-slate-400',
-                    )}>
-                      {usagePct}%
-                    </span>
-                  )}
-                </div>
-                {usagePct != null && (
-                  <div className="mt-1 w-full h-1 bg-slate-100 dark:bg-neutral-700 rounded-full overflow-hidden">
-                    <div
-                      className={cn('h-full rounded-full transition-all duration-500', usagePct >= alertPct ? 'bg-amber-400' : 'bg-cyan-500')}
-                      style={{ width: `${Math.min(usagePct, 100)}%` }}
-                    />
-                  </div>
-                )}
-              </div>
-            </button>
-          ) : (
-            <button onClick={() => setUsageOpen(true)}
-              className="group relative flex items-center justify-center w-10 h-10 rounded-full mx-auto text-slate-400 hover:text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-950/30 transition-all"
-              title="My usage"
-            >
-              <Gauge size={17} strokeWidth={1.5} />
-              <span className={TOOLTIP}>My usage</span>
-            </button>
-          )}
-        </div>
+        {/* Usage card */}
+        {expanded ? (
+          <div className="px-3 pb-2">
+            <div className="rounded-2xl bg-gray-50 dark:bg-neutral-800 p-3.5">
+              <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 mb-1.5">My Usage</p>
 
-        {/* Logout */}
-        <div className="px-3 pb-3">
+              <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed mb-2">
+                Your current plan has limited AI usage capacity:
+              </p>
+
+              {/* Bar + % label */}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-1.5 bg-slate-200 dark:bg-neutral-700 rounded-full overflow-hidden">
+                  <div
+                    className={cn(
+                      'h-full rounded-full transition-all duration-500',
+                      (usagePct ?? 0) >= alertPct ? 'bg-amber-400' : 'bg-cyan-500',
+                    )}
+                    style={{ width: `${Math.min(usagePct ?? 0, 100)}%` }}
+                  />
+                </div>
+                <span className={cn(
+                  'text-[11px] font-semibold tabular-nums shrink-0',
+                  (usagePct ?? 0) >= alertPct ? 'text-amber-500' : 'text-cyan-500',
+                )}>
+                  {usagePct ?? 0}%
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <FadingDivider />
+
+        {/* User card — logout pops out on chevron click */}
+        <div className="px-3 pb-3 relative" ref={userMenuRef}>
+
+          {/* Popout menu (appears above) */}
+          {userMenuOpen && (
+            <div className="absolute bottom-full left-3 right-3 mb-2 bg-white dark:bg-neutral-800 rounded-2xl border border-gray-100 dark:border-neutral-700 shadow-lg overflow-hidden">
+              <button
+                onClick={() => logout()}
+                className="flex items-center gap-2.5 w-full px-4 py-3 text-sm text-slate-600 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+              >
+                <LogOut size={14} strokeWidth={1.5} />
+                Sign out
+              </button>
+            </div>
+          )}
+
           {expanded ? (
-            <button onClick={() => logout()}
-              className="group flex items-center gap-3 w-full rounded-full px-3 py-2.5 transition-all text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30"
+            <button
+              onClick={() => setUserMenuOpen(o => !o)}
+              className="group flex items-center gap-3 w-full rounded-2xl px-2 py-2 transition-all hover:bg-gray-50 dark:hover:bg-neutral-800"
             >
-              <span className="flex items-center justify-center w-5 h-5 shrink-0">
-                <LogOut size={17} strokeWidth={1.5} />
-              </span>
-              <span className="text-sm whitespace-nowrap">Sign out</span>
+              <Avatar
+                name={me?.full_name ?? me?.username ?? me?.email}
+                email={me?.email}
+                size="sm"
+              />
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate leading-tight">
+                  {me?.full_name ?? me?.username ?? me?.email ?? '—'}
+                </p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate leading-tight mt-0.5">
+                  {me?.email ?? ''}
+                </p>
+              </div>
+              <ChevronRight
+                size={14}
+                strokeWidth={1.75}
+                className={cn(
+                  'shrink-0 text-slate-400 dark:text-slate-500 transition-all',
+                  userMenuOpen && 'rotate-90 text-slate-600 dark:text-slate-300'
+                )}
+              />
             </button>
           ) : (
-            <button onClick={() => logout()}
-              className="group relative flex items-center justify-center w-10 h-10 rounded-full mx-auto text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
-              title="Sign out"
+            <button
+              onClick={() => setUserMenuOpen(o => !o)}
+              className="group relative flex justify-center w-10 mx-auto"
+              title={me?.full_name ?? me?.email ?? 'Account'}
             >
-              <LogOut size={17} strokeWidth={1.5} />
-              <span className={TOOLTIP}>Sign out</span>
+              <Avatar
+                name={me?.full_name ?? me?.username ?? me?.email}
+                email={me?.email}
+                size="sm"
+              />
+              <span className={TOOLTIP}>{me?.full_name ?? me?.email ?? 'Account'}</span>
             </button>
           )}
         </div>
@@ -531,7 +601,6 @@ export function Sidebar() {
 
     {/* ── MBody Brain chat panel (⌘K) ── */}
     <ChatPanel open={chatOpen} onClose={() => setChatOpen(false)} />
-    <UsageModal open={usageOpen} onClose={() => setUsageOpen(false)} />
-    </>
+</>
   )
 }

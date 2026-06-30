@@ -4,28 +4,49 @@ import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
 import {
   Plus, Zap, Atom, BrainCog, Archive, Cog,
+  Users, Contact, FolderClock, AudioLines,
 } from 'lucide-react'
-import api from '@/lib/api'
+import api, { securityApi } from '@/lib/api'
+import { cn } from '@/lib/utils'
 import {
   StatInline, getDateLabel,
   AccountIntelligence, VerticalCoverage,
   AIAgents, GeographicCoverage,
   PipelineFunnel, DataQuality,
-  type InvestorData,
+  RecentLeadsTable, SignalPills,
+  type InvestorData, type MarketSignal,
 } from '@/components/dashboard'
 
 /* ── Quick actions ───────────────────────────────────────────────────────── */
-const QUICK_ACTIONS = [
-  { Icon: Plus,     label: 'New Lead',       href: '/leads'       },
-  { Icon: Zap,      label: 'Run Pipeline',   href: '/leads'       },
-  { Icon: Atom,     label: 'Agent Logs',     href: '/agents/logs' },
-  { Icon: BrainCog, label: 'Intelligence',   href: '/training'    },
-  { Icon: Archive,  label: 'Vault',          href: '/vault'       },
-  { Icon: Cog,      label: 'Settings',       href: '/settings'    },
+const ADMIN_QUICK_ACTIONS = [
+  { Icon: Plus,     label: 'New Lead',     href: '/leads'       },
+  { Icon: Zap,      label: 'Run Pipeline', href: '/leads'       },
+  { Icon: Atom,     label: 'Agent Logs',   href: '/agents/logs' },
+  { Icon: BrainCog, label: 'Intelligence', href: '/training'    },
+  { Icon: Archive,  label: 'Vault',        href: '/vault'       },
+  { Icon: Cog,      label: 'Settings',     href: '/settings'    },
 ]
+
+const SALES_QUICK_ACTIONS = [
+  { Icon: Plus,        label: 'Add Lead',      href: '/leads'    },
+  { Icon: Users,       label: 'My Leads',      href: '/leads'    },
+  { Icon: Contact,     label: 'Contacts',      href: '/contacts' },
+  { Icon: FolderClock, label: 'Tickets',       href: '/tickets'  },
+  { Icon: AudioLines,  label: 'AI Chat',        href: '/ai'       },
+]
+
+const SALES_ROLES = ['sales_rep']
 
 /* ── Page ────────────────────────────────────────────────────────────────── */
 export default function DashboardPage() {
+  const { data: me } = useQuery({
+    queryKey: ['security-me'],
+    queryFn:  securityApi.getMe,
+    staleTime: 300_000,
+  })
+
+  const isSalesRep = SALES_ROLES.includes(me?.role ?? '')
+
   const { data, isLoading } = useQuery<InvestorData>({
     queryKey: ['investor-overview'],
     queryFn:  () => api.get('/dashboard/investor').then(r => r.data),
@@ -43,6 +64,15 @@ export default function DashboardPage() {
   const funnel      = data?.funnel            ?? []
   const companyData = data?.company_data
 
+  const quickActions = isSalesRep ? SALES_QUICK_ACTIONS : ADMIN_QUICK_ACTIONS
+
+  const { data: signalsData, isLoading: signalsLoading } = useQuery<{ signals: MarketSignal[] }>({
+    queryKey: ['market-signals'],
+    queryFn:  () => api.get('/leads/signals', { params: { limit: 30 } }).then(r => r.data),
+    staleTime: 300_000,
+  })
+  const signals = signalsData?.signals ?? []
+
   return (
     <div className="space-y-6 px-6 py-8">
 
@@ -53,57 +83,104 @@ export default function DashboardPage() {
             {getDateLabel()}
           </p>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 mt-2">
-            Intelligence Overview
+            {isSalesRep ? 'My Pipeline' : 'Intelligence Overview'}
           </h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            AI-powered B2B pipeline across North American verticals.
+            {isSalesRep
+              ? 'Your active leads and pipeline at a glance.'
+              : 'AI-powered B2B pipeline across North American verticals.'}
           </p>
         </div>
 
         <div className="flex flex-1 items-center gap-4">
           <div className="flex flex-wrap gap-4">
-            <StatInline
-              label="Companies tracked"
-              value={p ? p.total_companies.toLocaleString() : 0}
-              badge={p ? `${p.score_dist.high} high-conf` : '…'}
-              variant="blue"
-              loading={isLoading}
-            />
-            <StatInline
-              label="SQL-Ready"
-              value={p ? p.sql_ready : 0}
-              badge={p && p.total_companies ? `${Math.round(p.sql_ready / p.total_companies * 100)}% rate` : '…'}
-              variant="success"
-              loading={isLoading}
-            />
-            <StatInline
-              label="Vault Identities"
-              value={vault ? vault.identities.toLocaleString() : 0}
-              badge={vault ? `${vault.email_pct}% email` : '…'}
-              variant="violet"
-              loading={isLoading}
-            />
-            <StatInline
-              label="Avg Qual Score"
-              value={p ? Math.round(p.avg_qual_score) : 0}
-              badge="/100"
-              variant="warning"
-              loading={isLoading}
-            />
-            <StatInline
-              label="Cost per SQL"
-              value={costs ? (costs.cost_per_sql > 0 ? `$${costs.cost_per_sql.toFixed(2)}` : '$0') : 0}
-              badge={costs ? `$${costs.total_usd.toFixed(2)} total` : '…'}
-              variant="muted"
-              loading={isLoading}
-            />
+            {isSalesRep ? (
+              <>
+                <StatInline
+                  label="Active Leads"
+                  value={p ? p.total_companies.toLocaleString() : 0}
+                  badge={p ? `${p.score_dist.high} high-conf` : '…'}
+                  variant="blue"
+                  loading={isLoading}
+                />
+                <StatInline
+                  label="SQL-Ready"
+                  value={p ? p.sql_ready : 0}
+                  badge={p && p.total_companies ? `${Math.round(p.sql_ready / p.total_companies * 100)}% rate` : '…'}
+                  variant="success"
+                  loading={isLoading}
+                />
+                <StatInline
+                  label="Contacts"
+                  value={vault ? vault.identities.toLocaleString() : 0}
+                  badge={vault ? `${vault.email_pct}% email` : '…'}
+                  variant="violet"
+                  loading={isLoading}
+                />
+                <StatInline
+                  label="Avg Score"
+                  value={p ? Math.round(p.avg_qual_score) : 0}
+                  badge="/100"
+                  variant="warning"
+                  loading={isLoading}
+                />
+                <StatInline
+                  label="Cost per Lead"
+                  value={costs ? (costs.cost_per_sql > 0 ? `$${costs.cost_per_sql.toFixed(2)}` : '$0') : 0}
+                  badge={costs ? `$${costs.total_usd.toFixed(2)} total` : '…'}
+                  variant="muted"
+                  loading={isLoading}
+                />
+              </>
+            ) : (
+              <>
+                <StatInline
+                  label="Companies tracked"
+                  value={p ? p.total_companies.toLocaleString() : 0}
+                  badge={p ? `${p.score_dist.high} high-conf` : '…'}
+                  variant="blue"
+                  loading={isLoading}
+                />
+                <StatInline
+                  label="SQL-Ready"
+                  value={p ? p.sql_ready : 0}
+                  badge={p && p.total_companies ? `${Math.round(p.sql_ready / p.total_companies * 100)}% rate` : '…'}
+                  variant="success"
+                  loading={isLoading}
+                />
+                <StatInline
+                  label="Vault Identities"
+                  value={vault ? vault.identities.toLocaleString() : 0}
+                  badge={vault ? `${vault.email_pct}% email` : '…'}
+                  variant="violet"
+                  loading={isLoading}
+                />
+                <StatInline
+                  label="Avg Qual Score"
+                  value={p ? Math.round(p.avg_qual_score) : 0}
+                  badge="/100"
+                  variant="warning"
+                  loading={isLoading}
+                />
+                <StatInline
+                  label="Cost per SQL"
+                  value={costs ? (costs.cost_per_sql > 0 ? `$${costs.cost_per_sql.toFixed(2)}` : '$0') : 0}
+                  badge={costs ? `$${costs.total_usd.toFixed(2)} total` : '…'}
+                  variant="muted"
+                  loading={isLoading}
+                />
+              </>
+            )}
           </div>
         </div>
       </div>
 
-      {/* ── Quick actions — matches Checklist grid-cols-6 ────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        {QUICK_ACTIONS.map(({ Icon, label, href }) => (
+      {/* ── Quick actions ─────────────────────────────────────────────── */}
+      <div className={cn(
+        'grid grid-cols-2 sm:grid-cols-3 gap-3',
+        isSalesRep ? 'lg:grid-cols-5' : 'lg:grid-cols-6',
+      )}>
+        {quickActions.map(({ Icon, label, href }) => (
           <Link
             key={href + label}
             href={href}
@@ -119,24 +196,39 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* ── Row 1: col-span-5 → [AI Agents + Account Intelligence (3/5)] + [Vertical Coverage (2/5)] */}
-      {/* Mirrors Checklist: col-span-3 inner grid-cols-2 + col-span-2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-        <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <AIAgents agentStats={agentStats} loading={isLoading} />
-          <AccountIntelligence groups={groups} ungrouped={ungrouped} loading={isLoading} />
-        </div>
-        <div className="lg:col-span-2 h-full">
-          <VerticalCoverage verticals={verts} loading={isLoading} />
-        </div>
-      </div>
+      {/* ── Market signal pills ───────────────────────────────────────── */}
+      <SignalPills signals={signals} loading={signalsLoading} />
 
-      {/* ── Row 2: 3 equal columns ─────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <PipelineFunnel funnel={funnel} loading={isLoading} />
-        <GeographicCoverage geo={geo} loading={isLoading} />
-        <DataQuality vault={vault} companyData={companyData} loading={isLoading} />
-      </div>
+      {/* ── Main content ──────────────────────────────────────────────── */}
+      {isSalesRep ? (
+        /* Sales rep: Recent Leads table (left) + Geographic Coverage (right) */
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+          <div className="lg:col-span-3">
+            <RecentLeadsTable />
+          </div>
+          <div className="lg:col-span-2">
+            <GeographicCoverage geo={geo} loading={isLoading} />
+          </div>
+        </div>
+      ) : (
+        /* Admin: original two-row layout */
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+            <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <AIAgents agentStats={agentStats} loading={isLoading} />
+              <AccountIntelligence groups={groups} ungrouped={ungrouped} loading={isLoading} />
+            </div>
+            <div className="lg:col-span-2 h-full">
+              <VerticalCoverage verticals={verts} loading={isLoading} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <PipelineFunnel funnel={funnel} loading={isLoading} />
+            <GeographicCoverage geo={geo} loading={isLoading} />
+            <DataQuality vault={vault} companyData={companyData} loading={isLoading} />
+          </div>
+        </>
+      )}
 
     </div>
   )
