@@ -39,6 +39,17 @@ export default function ModelsPage() {
     onSuccess:  () => qc.invalidateQueries({ queryKey: ['training-models'] }),
   })
 
+  const evaluateMutation = useMutation({
+    mutationFn: (id: number) => api.post(`/training/models/${id}/evaluate`),
+    onSuccess:  () => qc.invalidateQueries({ queryKey: ['training-models'] }),
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, patch }: { id: number; patch: { base_model: string } }) =>
+      api.patch(`/training/models/${id}`, patch),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['training-models'] }),
+  })
+
   const allModels: any[] = data?.models ?? []
   const models = statusFilter === 'all'
     ? allModels
@@ -117,8 +128,12 @@ export default function ModelsPage() {
               mv={mv}
               onPromote={id => promoteMutation.mutate(id)}
               onRetire={id => retireMutation.mutate(id)}
+              onEvaluate={id => evaluateMutation.mutate(id)}
+              onUpdate={(id, patch) => updateMutation.mutate({ id, patch })}
               promoting={promoteMutation.isPending}
               retiring={retireMutation.isPending}
+              evaluating={evaluateMutation.isPending}
+              isRunningEval={allModels.some(m => m.status === 'evaluating')}
             />
           ))}
         </div>
