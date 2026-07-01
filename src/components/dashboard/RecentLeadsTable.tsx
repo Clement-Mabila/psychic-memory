@@ -105,7 +105,7 @@ export function RecentLeadsTable() {
 
   const leads: any[] = (data?.leads ?? [])
     .filter((l: any) => !hiddenIds.has(String(l.id)))
-    .slice(0, 6)
+    .slice(0, 5)
 
   // Favourites & bookmarks — backend-persisted per user
   const qc = useQueryClient()
@@ -182,7 +182,7 @@ export function RecentLeadsTable() {
   }
 
   return (
-    <CardShell className="flex flex-col">
+    <CardShell className="flex flex-col h-full">
       {/* Header */}
       <div className="px-5 pt-4 pb-3">
         <p className="text-base font-semibold text-slate-800 dark:text-slate-100">Pipeline Spotlight</p>
@@ -191,12 +191,15 @@ export function RecentLeadsTable() {
 
       {/* Table */}
       <div className="px-4 pb-4 pt-3">
-        <div className="rounded-md bg-stone-50 dark:bg-neutral-900 border border-stone-200 dark:border-neutral-800">
+        <div className="rounded-md overflow-hidden bg-white dark:bg-neutral-900 border border-stone-200 dark:border-neutral-800">
           <table className="w-full">
             <thead>
               <tr className="bg-stone-100 dark:bg-neutral-800 border-b border-stone-200 dark:border-neutral-800">
                 {HEADERS.map((h, i) => (
-                  <th key={i} className="px-4 py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                  <th key={i} className={cn(
+                    'py-3 text-left text-xs font-medium text-slate-600 dark:text-slate-400 whitespace-nowrap',
+                    i === HEADERS.length - 1 ? 'px-2' : 'px-4',
+                  )}>
                     {h.infoBefore ? (
                       <div className="flex items-center gap-1.5">
                         <Info className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500 flex-shrink-0" />
@@ -310,9 +313,9 @@ export function RecentLeadsTable() {
       <div className="flex justify-end px-4 pt-2 pb-3">
         <Link
           href="/leads"
-          className="flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+          className="flex items-center gap-1 text-xs font-normal text-slate-600 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
         >
-          View all <ArrowRight size={15} />
+          View all <ArrowRight size={13} />
         </Link>
       </div>
 
@@ -340,8 +343,10 @@ function RowMenu({
   onToggleFavorite: () => void
   onToggleBookmark: () => void
 }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const [open, setOpen]         = useState(false)
+  const [flipDown, setFlipDown] = useState(false)
+  const ref    = useRef<HTMLDivElement>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -351,12 +356,21 @@ function RowMenu({
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
+  function toggle(e: React.MouseEvent) {
+    e.stopPropagation()
+    if (!open && btnRef.current) {
+      setFlipDown(btnRef.current.getBoundingClientRect().top < 180)
+    }
+    setOpen(p => !p)
+  }
+
   const itemCls = 'w-full flex items-center gap-2.5 px-3 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-stone-50 dark:hover:bg-neutral-800 transition-colors rounded-lg'
 
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={e => { e.stopPropagation(); setOpen(p => !p) }}
+        ref={btnRef}
+        onClick={toggle}
         className={cn(
           'opacity-0 group-hover:opacity-100 flex items-center justify-center w-6 h-6 rounded-lg transition-all',
           open ? 'opacity-100 bg-stone-100 dark:bg-neutral-800 text-slate-600' : 'text-slate-400 hover:bg-stone-100 dark:hover:bg-neutral-800',
@@ -366,7 +380,10 @@ function RowMenu({
       </button>
 
       {open && (
-        <div className="absolute bottom-full right-0 mb-1.5 z-50 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-700 rounded-xl shadow-lg p-1 min-w-[175px]">
+        <div className={cn(
+          'absolute right-0 z-50 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-700 rounded-xl shadow-lg p-1 min-w-[175px]',
+          flipDown ? 'top-full mt-1.5' : 'bottom-full mb-1.5',
+        )}>
           {/* Remove from spotlight */}
           <button
             onClick={() => { onHide(); setOpen(false) }}

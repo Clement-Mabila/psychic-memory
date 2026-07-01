@@ -1,17 +1,18 @@
 'use client'
 
 import { useState, useRef, useEffect, type ReactNode } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   ChevronLeft, ChevronRight,
-  Search, LayoutGrid, Table2, Network, Building2,
-  ListFilter, Check, X, PlusCircle, Handshake,
+  Search, LayoutGrid, Table2, Network,
+  ListFilter, Check, X, PlusCircle,
   EyeOff, Eye, MoreVertical, Info,
   ChevronDown, Trash2, Plus, BadgeInfo,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import api, { securityApi } from '@/lib/api'
+import api from '@/lib/api'
 import LeadCard from '@/components/leads/LeadCard'
 import LeadTable from '@/components/leads/LeadTable'
 import GroupPickerModal from '@/components/leads/GroupPickerModal'
@@ -637,19 +638,11 @@ function KanbanColumn({
   )
 }
 
-const TECHNICAL_ROLES = ['super_admin', 'admin', 'manager', 'analyst']
-
 export default function LeadsPage() {
   const qc = useQueryClient()
+  const searchParams = useSearchParams()
 
-  const { data: me } = useQuery({
-    queryKey: ['security-me'],
-    queryFn:  securityApi.getMe,
-    staleTime: 300_000,
-  })
-  const isTechnicalUser = TECHNICAL_ROLES.includes(me?.role ?? '')
-
-  const [view,          setView]          = useState<ViewMode>('kanban')
+  const [view,          setView]          = useState<ViewMode>((searchParams.get('view') as ViewMode) ?? 'kanban')
   const [groupViewMode, setGroupViewMode] = useState<'kanban' | 'table'>('kanban')
   const [search,      setSearch]      = useState('')
   const [filterRules, setFilterRules] = useState<FilterRule[]>(DEFAULT_FILTER_RULES)
@@ -660,8 +653,6 @@ export default function LeadsPage() {
   const [showPortfolioModal, setShowPortfolioModal] = useState(false)
   const [showCreateGroup,    setShowCreateGroup]     = useState(false)
   const [detailLeadId,       setDetailLeadId]        = useState<string | null>(null)
-  const [cardStyle, setCardStyle] = useState<'technical' | 'non-technical'>('technical')
-  const effectiveCardStyle = isTechnicalUser ? cardStyle : 'non-technical'
   const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set())
 
   const filterParams = rulesToParams(filterRules)
@@ -809,28 +800,6 @@ export default function LeadsPage() {
               <PlusCircle className="h-4 w-4 text-white" />
             </button>
           )}
-          {view === 'kanban' && isTechnicalUser && (
-            <>
-              {([
-                { id: 'technical',     label: 'Companies', Icon: Building2 },
-                { id: 'non-technical', label: 'Deals',     Icon: Handshake },
-              ] as const).map(({ id, label, Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => setCardStyle(id)}
-                  className={cn(
-                    'flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-colors font-normal',
-                    cardStyle === id
-                      ? 'bg-gray-100 dark:bg-zinc-800 text-slate-900 dark:text-slate-100'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800'
-                  )}
-                >
-                  <Icon size={14} />
-                  {label}
-                </button>
-              ))}
-            </>
-          )}
           <div className="w-px h-5 bg-slate-200 dark:bg-slate-700" />
           <button
             onClick={() => setShowPortfolioModal(true)}
@@ -903,7 +872,7 @@ export default function LeadsPage() {
               onSelect={toggleSelect}
               onOpen={id => setDetailLeadId(id)}
               onSetGroup={id => setGroupPickerLeadId(id)}
-              cardStyle={effectiveCardStyle}
+              cardStyle="non-technical"
               onHide={() => setHiddenColumns(s => new Set([...s, col.id]))}
             />
           ))}

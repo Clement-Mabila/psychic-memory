@@ -366,7 +366,7 @@ export function GeographicCoverage({
   }, [hovered, positions, pan, zoom])
 
   return (
-    <CardShell className="px-6 pt-6 pb-5 flex flex-col">
+    <CardShell className="px-6 pt-6 pb-5 flex flex-col h-full">
       <div className="mb-3">
         <h2 className="text-base font-semibold text-slate-900 dark:text-white">Geographic Coverage</h2>
         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -376,7 +376,7 @@ export function GeographicCoverage({
         </p>
       </div>
 
-      <div className="relative w-full rounded-xl bg-neutral-100 dark:bg-neutral-900 overflow-hidden" style={{ height: 275 }}>
+      <div className="relative w-full rounded-xl bg-neutral-100 dark:bg-neutral-900 overflow-hidden flex-1 min-h-[275px]">
         {loading ? (
           <Skel className="w-full h-full rounded-xl" />
         ) : (
@@ -559,7 +559,7 @@ export function GeographicCoverage({
           ))}
           <span className="flex items-center gap-1.5 text-xs text-slate-500 ml-auto">
             <Earth size={10} className="text-sky-500" />
-            parent co.
+            in group
           </span>
         </div>
       )}

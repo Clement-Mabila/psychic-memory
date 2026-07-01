@@ -9,7 +9,10 @@ const STREAM_BASE = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000')
 
 function authHeader(): Record<string, string> {
   const token = Cookies.get('access_token')
-  return token ? { Authorization: `Bearer ${token}` } : {}
+  return {
+    'ngrok-skip-browser-warning': 'true',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
 }
 
 export async function listSessions(): Promise<ChatSession[]> {

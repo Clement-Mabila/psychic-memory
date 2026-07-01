@@ -10,21 +10,20 @@ import api, { securityApi } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import {
   StatInline, getDateLabel,
-  AccountIntelligence, VerticalCoverage,
-  AIAgents, GeographicCoverage,
-  PipelineFunnel, DataQuality,
+  AccountIntelligence, AIAgents,
+  GeographicCoverage, DataQuality,
   RecentLeadsTable, SignalPills,
   type InvestorData, type MarketSignal,
 } from '@/components/dashboard'
 
 /* ── Quick actions ───────────────────────────────────────────────────────── */
 const ADMIN_QUICK_ACTIONS = [
-  { Icon: Plus,     label: 'New Lead',     href: '/leads'       },
-  { Icon: Zap,      label: 'Run Pipeline', href: '/leads'       },
-  { Icon: Atom,     label: 'Agent Logs',   href: '/agents/logs' },
-  { Icon: BrainCog, label: 'Intelligence', href: '/training'    },
-  { Icon: Archive,  label: 'Vault',        href: '/vault'       },
-  { Icon: Cog,      label: 'Settings',     href: '/settings'    },
+  { Icon: Plus,     label: 'New Lead',     href: '/leads'                                          },
+  { Icon: Zap,      label: 'Run Pipeline', href: '/leads',       dot: 'bg-violet-400'              },
+  { Icon: Atom,     label: 'Agent Logs',   href: '/agents/logs', dot: 'bg-emerald-400', pulse: true },
+  { Icon: BrainCog, label: 'Intelligence', href: '/training'                                       },
+  { Icon: Archive,  label: 'Vault',        href: '/vault',       dot: 'bg-blue-400'                },
+  { Icon: Cog,      label: 'Settings',     href: '/settings'                                       },
 ]
 
 const SALES_QUICK_ACTIONS = [
@@ -56,8 +55,6 @@ export default function DashboardPage() {
   const p           = data?.pipeline
   const vault       = data?.vault
   const costs       = data?.costs
-  const groups      = data?.company_groups    ?? []
-  const ungrouped   = data?.ungrouped_leads   ?? []
   const agentStats  = data?.agent_stats       ?? []
   const geo         = data?.geography         ?? []
   const verts       = data?.verticals         ?? []
@@ -180,14 +177,20 @@ export default function DashboardPage() {
         'grid grid-cols-2 sm:grid-cols-3 gap-3',
         isSalesRep ? 'lg:grid-cols-5' : 'lg:grid-cols-6',
       )}>
-        {quickActions.map(({ Icon, label, href }) => (
+        {quickActions.map(({ Icon, label, href, dot, pulse }: any) => (
           <Link
             key={href + label}
             href={href}
             className="flex flex-col items-center gap-2 rounded-2xl bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 px-4 py-3 text-center hover:bg-stone-50 dark:hover:bg-neutral-800 hover:border-stone-300 dark:hover:border-neutral-600 transition-all duration-200 group"
           >
-            <span className="flex items-center justify-center w-10 h-10 rounded-full bg-stone-100 dark:bg-neutral-800 group-hover:bg-stone-200 dark:group-hover:bg-neutral-700 transition-colors">
+            <span className="relative flex items-center justify-center w-10 h-10 rounded-full bg-stone-100 dark:bg-neutral-800 group-hover:bg-stone-200 dark:group-hover:bg-neutral-700 transition-colors">
               <Icon size={18} strokeWidth={1.5} className="text-slate-600 dark:text-slate-300" />
+              {dot && (
+                <span className={cn(
+                  'absolute top-0 right-0 w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-neutral-900',
+                  dot, pulse && 'animate-pulse',
+                )} />
+              )}
             </span>
             <span className="text-xs font-medium text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition-colors leading-tight">
               {label}
@@ -202,7 +205,7 @@ export default function DashboardPage() {
       {/* ── Main content ──────────────────────────────────────────────── */}
       {isSalesRep ? (
         /* Sales rep: Recent Leads table (left) + Geographic Coverage (right) */
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
           <div className="lg:col-span-3">
             <RecentLeadsTable />
           </div>
@@ -211,20 +214,19 @@ export default function DashboardPage() {
           </div>
         </div>
       ) : (
-        /* Admin: original two-row layout */
+        /* Admin: spotlight + geo top, then three-column bottom */
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-start">
-            <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <AIAgents agentStats={agentStats} loading={isLoading} />
-              <AccountIntelligence groups={groups} ungrouped={ungrouped} loading={isLoading} />
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
+            <div className="lg:col-span-3">
+              <RecentLeadsTable />
             </div>
-            <div className="lg:col-span-2 h-full">
-              <VerticalCoverage verticals={verts} loading={isLoading} />
+            <div className="lg:col-span-2">
+              <GeographicCoverage geo={geo} loading={isLoading} />
             </div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            <PipelineFunnel funnel={funnel} loading={isLoading} />
-            <GeographicCoverage geo={geo} loading={isLoading} />
+            <AIAgents agentStats={agentStats} loading={isLoading} />
+            <AccountIntelligence />
             <DataQuality vault={vault} companyData={companyData} loading={isLoading} />
           </div>
         </>

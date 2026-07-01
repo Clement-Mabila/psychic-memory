@@ -297,7 +297,7 @@ function RepPicker({ lead }: { lead: any }) {
 
   const { data } = useQuery<any[]>({
     queryKey: ['reps'],
-    queryFn:  () => api.get('/reps').then(r => r.data.reps),
+    queryFn:  () => api.get('/reps').then(r => r.data.reps ?? []),
     staleTime: 5 * 60_000,
     enabled:   open,
   })

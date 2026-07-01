@@ -3,8 +3,8 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import {
-  Construction, Hammer, Handshake, Users, DollarSign, Zap, Newspaper,
-  ChevronLeft, ChevronRight, ChevronUp,
+  Construction, Hammer, Handshake, Users, DollarSign, Zap, CircleStar,
+  ChevronLeft, ChevronRight, ChevronUp, AudioLines,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import CompanyAvatar from '@/components/leads/CompanyAvatar'
@@ -25,27 +25,27 @@ export interface MarketSignal {
 
 /* ── Signal-type config ──────────────────────────────────────────────────── */
 
-const STONE_PILL = 'border-stone-200 bg-stone-50 text-stone-700 dark:bg-neutral-800/60 dark:border-neutral-700 dark:text-slate-300'
-
 const SIGNAL_CONFIG: Record<string, {
-  label: string
-  dot:   string
-  badge: string
-  Icon:  React.ElementType
+  label:  string
+  dot:    string
+  badge:  string
+  border: string
+  Icon:   React.ElementType
 }> = {
-  expansion:        { label: 'Expansion',   dot: 'bg-blue-500',  badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400',  Icon: Construction },
-  renovation:       { label: 'Renovation',  dot: 'bg-rose-500',  badge: 'bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-400',  Icon: Hammer     },
-  acquisition:      { label: 'Acquisition', dot: 'bg-pink-500',  badge: 'bg-pink-100 text-pink-700 dark:bg-pink-900/50 dark:text-pink-400',  Icon: Zap        },
-  investment:       { label: 'Investment',  dot: 'bg-blue-500',  badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-400',  Icon: DollarSign },
-  partnership:      { label: 'Partnership', dot: 'bg-rose-500',  badge: 'bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-400',  Icon: Handshake  },
-  leadership_change:{ label: 'Leadership',  dot: 'bg-pink-500',  badge: 'bg-pink-100 text-pink-700 dark:bg-pink-900/50 dark:text-pink-400',  Icon: Users      },
+  expansion:        { label: 'Expansion',   dot: 'bg-pink-500',   badge: 'bg-pink-50 text-pink-800 dark:bg-pink-900/50 dark:text-pink-300',    border: 'border-pink-200 dark:border-pink-800',   Icon: Construction },
+  renovation:       { label: 'Renovation',  dot: 'bg-amber-500',  badge: 'bg-amber-50 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300',  border: 'border-amber-200 dark:border-amber-800',  Icon: Hammer       },
+  acquisition:      { label: 'Acquisition', dot: 'bg-blue-500',   badge: 'bg-blue-50 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300',    border: 'border-blue-200 dark:border-blue-800',   Icon: Zap          },
+  investment:       { label: 'Investment',  dot: 'bg-emerald-500',badge: 'bg-emerald-50 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300', border: 'border-emerald-200 dark:border-emerald-800', Icon: DollarSign },
+  partnership:      { label: 'Partnership', dot: 'bg-fuchsia-500', badge: 'bg-fuchsia-50 text-fuchsia-800 dark:bg-fuchsia-900/50 dark:text-fuchsia-300', border: 'border-fuchsia-200 dark:border-fuchsia-800', Icon: Handshake },
+  leadership_change:{ label: 'Leadership',  dot: 'bg-violet-500',    badge: 'bg-violet-50 text-violet-800 dark:bg-violet-900/50 dark:text-violet-300',      border: 'border-violet-200 dark:border-violet-800',     Icon: Users        },
 }
 
 const FALLBACK_CONFIG = {
-  label: 'Signal',
-  dot:   'bg-stone-400',
-  badge: 'bg-stone-100 text-stone-600',
-  Icon:  Zap,
+  label:  'Signal',
+  dot:    'bg-stone-400',
+  badge:  'bg-stone-100 text-stone-700',
+  border: 'border-stone-200 dark:border-neutral-700',
+  Icon:   Zap,
 }
 
 function cfg(type: string) { return SIGNAL_CONFIG[type] ?? FALLBACK_CONFIG }
@@ -56,13 +56,13 @@ function SummaryWithMore({ text }: { text: string }) {
   const [expanded, setExpanded] = useState(false)
   return (
     <div className="relative">
-      <p className={cn('text-xs text-slate-500 dark:text-slate-400 leading-relaxed', !expanded && 'line-clamp-4')}>
+      <p className={cn('text-xs text-slate-500 dark:text-slate-400 leading-relaxed', !expanded && 'line-clamp-3')}>
         {text}
       </p>
       {!expanded ? (
         <button
           onClick={() => setExpanded(true)}
-          className="absolute bottom-0.5 right-0 text-blue-500 dark:text-blue-400 text-xs font-medium bg-white dark:bg-neutral-900 pl-1 hover:underline"
+          className="absolute bottom-0.5 right-0 text-slate-600 dark:text-slate-400 text-xs font-medium bg-white dark:bg-neutral-900 pl-1 hover:text-slate-700 dark:hover:text-slate-300 hover:underline"
         >
           see more
         </button>
@@ -94,27 +94,31 @@ function SignalPopup({
     ? new Date(signal.article_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : null
 
+  const POPUP_W = 300
+  const flipLeft = pos.x + POPUP_W + 16 > window.innerWidth
+  const left = flipLeft ? Math.max(8, pos.x - POPUP_W) : pos.x
+
   return createPortal(
     <div
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
-      style={{ position: 'fixed', left: pos.x, top: pos.y, zIndex: 9999, width: 300 }}
-      className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-2xl shadow-xl p-4 flex flex-col gap-3"
+      style={{ position: 'fixed', left, top: pos.y, zIndex: 9999, width: POPUP_W }}
+      className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl shadow-md p-4 flex flex-col gap-2.5"
     >
       {/* Company */}
       <div className="flex items-center gap-2">
-        <CompanyAvatar name={signal.company_name} domain={signal.domain ?? ''} size="xs" circle />
+        <CompanyAvatar name={signal.company_name} domain={signal.domain ?? ''} size="xxs" circle />
         <span className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{signal.company_name}</span>
       </div>
 
       {/* Badge + date */}
-      <div className="flex items-center justify-between gap-2">
-        <span className={cn('inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full', badge)}>
+      <div className="flex items-center gap-2 mt-1 mb-1">
+        <span className={cn('inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-md', badge)}>
           <Icon size={10} strokeWidth={2} />
           {label}
         </span>
         {dateStr && (
-          <span className="text-[11px] text-slate-600 dark:text-slate-400">{dateStr}</span>
+          <span className="text-xs text-slate-800 dark:text-slate-500">{dateStr}</span>
         )}
       </div>
 
@@ -132,9 +136,10 @@ function SignalPopup({
           href={signal.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-xs font-medium text-blue-500 hover:text-blue-600 dark:text-blue-400 transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-500 hover:text-blue-600 dark:text-blue-400 transition-colors pt-2 mt-0.5 border-t border-gray-100 dark:border-neutral-800"
         >
-          Follow Article <Newspaper size={11} strokeWidth={2} />
+          <CircleStar size={14} strokeWidth={2} />
+          Follow article
         </a>
       )}
     </div>,
@@ -236,7 +241,7 @@ export function SignalPills({
           style={{ scrollbarWidth: 'none' }}
         >
           {signals.map(signal => {
-            const { dot, Icon, label } = cfg(signal.signal_type)
+            const { dot, Icon, label, badge, border } = cfg(signal.signal_type)
             const key = signal.lead_id + signal.url
 
             return (
@@ -248,16 +253,18 @@ export function SignalPills({
                 className={cn(
                   'relative flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5',
                   'rounded-full border text-xs font-medium cursor-default',
-                  'transition-all duration-150 hover:brightness-95',
-                  STONE_PILL,
+                  'transition-all duration-150 hover:brightness-95 shadow-sm',
+                  badge, border,
                 )}
               >
-                {/* Type dot — top-right corner */}
-                <span className={cn('absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-white dark:ring-neutral-900', dot)} />
-                <Icon size={11} strokeWidth={2.5} className="flex-shrink-0 opacity-50" />
+                {/* Pulsing live indicator — top-right corner */}
+                <span className={cn('absolute -top-1.5 -right-1 flex items-center justify-center w-4 h-4 rounded-full ring-2 ring-white dark:ring-neutral-900', dot)}>
+                  <AudioLines size={13} strokeWidth={2} color="white" />
+                </span>
+                <Icon size={11} strokeWidth={2.5} className="flex-shrink-0" />
                 <span className="font-semibold truncate max-w-[110px]">{signal.company_name}</span>
-                <span className="opacity-40">·</span>
-                <span className="font-normal opacity-60">{label}</span>
+                <span className="opacity-50">·</span>
+                <span className="font-normal">{label}</span>
               </button>
             )
           })}

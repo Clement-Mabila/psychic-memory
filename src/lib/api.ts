@@ -3,7 +3,10 @@ import Cookies from 'js-cookie'
 
 const BASE = '/api/console'
 
-const api: AxiosInstance = axios.create({ baseURL: BASE })
+const api: AxiosInstance = axios.create({
+  baseURL: BASE,
+  headers: { 'ngrok-skip-browser-warning': 'true' },
+})
 
 // Attach access token to every request
 api.interceptors.request.use(config => {
@@ -44,7 +47,7 @@ const IS_HTTPS = typeof window !== 'undefined' && window.location.protocol === '
 export const whoami = () => api.get('/auth/whoami').then(r => r.data)
 
 export async function login(username: string, password: string) {
-  const { data } = await axios.post(`${BASE}/auth/token`, { username, password })
+  const { data } = await axios.post(`${BASE}/auth/token`, { username, password }, { headers: { 'ngrok-skip-browser-warning': 'true' } })
   Cookies.set('access_token',  data.access,  { secure: IS_HTTPS, sameSite: 'lax' })
   Cookies.set('refresh_token', data.refresh, { secure: IS_HTTPS, sameSite: 'lax', expires: 7 })
   return data

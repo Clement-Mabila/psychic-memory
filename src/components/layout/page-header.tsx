@@ -196,7 +196,7 @@ function TicketsPageHeader({ className }: { className?: string }) {
 function LeadsPageHeader({ className }: { className?: string }) {
   const { data: repsData } = useQuery<any[]>({
     queryKey: ['reps'],
-    queryFn:  () => api.get('/reps').then(r => r.data.reps),
+    queryFn:  () => api.get('/reps').then(r => r.data.reps ?? []),
     staleTime: 60_000,
   })
 
@@ -299,7 +299,7 @@ function LeadsPageHeader({ className }: { className?: string }) {
 function ContactsPageHeader({ className }: { className?: string }) {
   const { data: repsData } = useQuery<any[]>({
     queryKey: ['reps'],
-    queryFn:  () => api.get('/reps').then(r => r.data.reps),
+    queryFn:  () => api.get('/reps').then(r => r.data.reps ?? []),
     staleTime: 60_000,
   })
 
@@ -465,7 +465,7 @@ function AgentPageHeader({ className }: { className?: string }) {
   // Rep / leads data for non-super_admin view
   const { data: repsData } = useQuery<any[]>({
     queryKey: ['reps'],
-    queryFn:  () => api.get('/reps').then(r => r.data.reps),
+    queryFn:  () => api.get('/reps').then(r => r.data.reps ?? []),
     staleTime: 60_000,
     enabled:  !isSuperAdmin,
   })
