@@ -184,7 +184,7 @@ export default function ContactsPage() {
         onClose={() => setSelectedContact(null)}
         onContactUpdated={(updated) => {
           setSelectedContact(updated)
-          handleResolved(updated.id)
+          handleResolved()
         }}
       />
     )
