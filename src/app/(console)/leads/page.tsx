@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, type ReactNode } from 'react'
+import { useState, useRef, useEffect, Suspense, type ReactNode } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
@@ -638,7 +638,7 @@ function KanbanColumn({
   )
 }
 
-export default function LeadsPage() {
+function LeadsPageInner() {
   const qc = useQueryClient()
   const searchParams = useSearchParams()
 
@@ -1050,5 +1050,13 @@ export default function LeadsPage() {
       )}
 
     </div>
+  )
+}
+
+export default function LeadsPage() {
+  return (
+    <Suspense>
+      <LeadsPageInner />
+    </Suspense>
   )
 }
