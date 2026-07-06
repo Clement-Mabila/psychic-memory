@@ -92,7 +92,7 @@ export default function ContactsPage() {
   const [search,     setSearch]     = useState('')
   const [filters,    setFilters]    = useState<FiltersState>(DEFAULT_FILTERS)
   const [page,       setPage]       = useState(1)
-  const [sortField,  setSortField]  = useState<SortField>(null)
+  const [sortField,  setSortField]  = useState<SortField>('status')
   const [sortDir,    setSortDir]    = useState<SortDir>('asc')
   const [selected,   setSelected]   = useState<Set<string>>(new Set())
   const [bulkState,  setBulkState]  = useState<'idle' | 'pending' | 'done' | 'failed'>('idle')
@@ -107,6 +107,8 @@ export default function ContactsPage() {
     filters.company, filters.domain, filters.topN,
   ].filter(Boolean).length
 
+  const orderingParam = sortField ? (sortDir === 'desc' ? `-${sortField}` : sortField) : undefined
+
   const queryParams = {
     search:          search              || undefined,
     tier:            filters.tierFilter  || undefined,
@@ -115,6 +117,7 @@ export default function ContactsPage() {
     company:         filters.company    || undefined,
     domain:          filters.domain     || undefined,
     top_n:           filters.topN       || undefined,
+    ordering:        orderingParam,
     page,
   }
 
@@ -137,13 +140,13 @@ export default function ContactsPage() {
     staleTime: 60_000,
   })
 
-  const contacts   = useMemo(() => sortContacts(data?.contacts ?? [], sortField, sortDir), [data, sortField, sortDir])
+  const contacts   = useMemo(() => data?.contacts ?? [], [data])
   const total      = data?.total      ?? 0
   const totalPages = data?.total_pages ?? 1
   const needsEmail = needsEmailData?.total ?? 0
   const zbPending  = zbData?.total ?? 0
 
-  const handleSort     = (field: SortField, dir: SortDir) => { setSortField(field); setSortDir(dir) }
+  const handleSort     = (field: SortField, dir: SortDir) => { setSortField(field); setSortDir(dir); setPage(1) }
   const handleResolved = useCallback(() => { queryClient.invalidateQueries({ queryKey: ['contacts'] }) }, [queryClient])
 
   const toggleSelect = (id: string) => setSelected(prev => {

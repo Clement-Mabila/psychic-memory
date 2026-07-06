@@ -70,7 +70,7 @@ export interface FiltersState {
   topN: string
 }
 
-export type SortField = 'name' | 'company' | 'role' | 'modified' | null
+export type SortField = 'name' | 'company' | 'role' | 'modified' | 'status' | null
 export type SortDir   = 'asc' | 'desc'
 export type GenPhase  = 'idle' | 'thinking' | 'content' | 'preview' | 'saving'
 export type RowAction = 'idle' | 'finding' | 'verifying' | 'done' | 'failed'

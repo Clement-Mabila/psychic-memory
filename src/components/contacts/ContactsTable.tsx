@@ -7,9 +7,22 @@ import type { Contact, SortField, SortDir } from './types'
 
 // ── Sort helper ───────────────────────────────────────────────────────────────
 
+const TIER_ORDER: Record<string, number> = {
+  verified:  0,
+  probable:  1,
+  inferred:  2,
+  not_found: 3,
+  blocked:   4,
+}
+
 export function sortContacts(contacts: Contact[], field: SortField, dir: SortDir): Contact[] {
   if (!field) return contacts
   return [...contacts].sort((a, b) => {
+    if (field === 'status') {
+      const ao = TIER_ORDER[a.verification_tier] ?? 99
+      const bo = TIER_ORDER[b.verification_tier] ?? 99
+      return dir === 'asc' ? ao - bo : bo - ao
+    }
     let av = '', bv = ''
     if (field === 'name')     { av = a.name.toLowerCase();              bv = b.name.toLowerCase() }
     if (field === 'company')  { av = (a.lead_name ?? '').toLowerCase(); bv = (b.lead_name ?? '').toLowerCase() }
@@ -191,7 +204,7 @@ export function ContactsTable({
                   </th>
                   <SortHead label="Name"     field="name"     sortField={sortField} sortDir={sortDir} onSort={onSort} />
                   <SortHead label="Company"  field="company"  sortField={sortField} sortDir={sortDir} onSort={onSort} />
-                  <th className="py-3.5 px-4 text-sm font-medium text-slate-900 dark:text-slate-100">Status</th>
+                  <SortHead label="Status" field="status" sortField={sortField} sortDir={sortDir} onSort={onSort} />
                   <th className="py-3.5 px-4 text-sm font-medium text-slate-900 dark:text-slate-100 min-w-[180px]">Email</th>
                   <SortHead label="Role"     field="role"     sortField={sortField} sortDir={sortDir} onSort={onSort} />
                   <SortHead label="Modified" field="modified" sortField={sortField} sortDir={sortDir} onSort={onSort} className="hidden lg:table-cell" />

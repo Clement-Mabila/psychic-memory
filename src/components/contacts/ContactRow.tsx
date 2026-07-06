@@ -13,11 +13,11 @@ import type { Contact } from './types'
 // ── TierBadge ─────────────────────────────────────────────────────────────────
 
 const TIER_BADGE: Record<string, { bg: string; text: string; label: string }> = {
-  verified:  { bg: 'bg-blue-50 dark:bg-blue-950/40',   text: 'text-white', label: 'Verified'  },
-  probable:  { bg: 'bg-amber-400',                      text: 'text-white', label: 'Probable'  },
-  inferred:  { bg: 'bg-pink-500',                       text: 'text-white', label: 'Inferred'  },
-  not_found: { bg: 'bg-red-50 dark:bg-red-950/400',    text: 'text-white', label: 'No Email'  },
-  blocked:   { bg: 'bg-gray-800',                       text: 'text-white', label: 'Blocked'   },
+  verified:  { bg: 'bg-blue-500',   text: 'text-white', label: 'Verified'  },
+  probable:  { bg: 'bg-pink-500',    text: 'text-white', label: 'Hunter'   },
+  inferred:  { bg: 'bg-violet-500', text: 'text-white', label: 'Inferred' },
+  not_found: { bg: 'bg-slate-300 dark:bg-neutral-600', text: 'text-slate-700 dark:text-slate-300', label: 'No Email'  },
+  blocked:   { bg: 'bg-gray-800',   text: 'text-white', label: 'Blocked'   },
 }
 
 function TierBadge({ tier }: { tier: string }) {
