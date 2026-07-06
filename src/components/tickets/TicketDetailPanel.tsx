@@ -518,7 +518,7 @@ function ThreadTab({
           {(['reply', ...(isSuperAdmin ? ['internal_note'] : [])] as const).map(type => (
             <button
               key={type}
-              onClick={() => setCommentType(type)}
+              onClick={() => setCommentType(type as 'reply' | 'internal_note')}
               className={cn(
                 'px-5 py-3 text-sm font-normal relative transition-colors',
                 commentType === type
