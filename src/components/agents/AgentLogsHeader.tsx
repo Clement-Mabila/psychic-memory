@@ -1,11 +1,17 @@
 'use client'
 
-import { LayoutList, Network } from 'lucide-react'
+import { LayoutList, Network, LayoutGrid } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { AgentMeta } from './AgentMeta'
 import { resolveStatus } from './AgentStatusUtils'
 
-export type AgentView = 'list' | 'network'
+export type AgentView = 'list' | 'kanban' | 'network'
+
+const VIEW_TABS: { id: AgentView; label: string; Icon: React.ElementType }[] = [
+  { id: 'list',    label: 'List',    Icon: LayoutList  },
+  { id: 'kanban',  label: 'Kanban',  Icon: LayoutGrid  },
+  { id: 'network', label: 'Network', Icon: Network      },
+]
 
 interface AgentLogsHeaderProps {
   meta: AgentMeta
@@ -25,7 +31,7 @@ export function AgentLogsHeader({ meta, logs, view, onViewChange }: AgentLogsHea
 
   return (
     <div className="flex-shrink-0 px-6 py-5 border-b border-slate-100 dark:border-slate-800">
-      {/* Title row */}
+      {/* Title + nav row */}
       <div className="flex items-center gap-3 mb-1">
         <Icon
           size={16}
@@ -40,37 +46,28 @@ export function AgentLogsHeader({ meta, logs, view, onViewChange }: AgentLogsHea
           </span>
         )}
 
-        {/* View toggle */}
-        <div className="ml-auto flex items-center gap-0.5 bg-slate-100 dark:bg-neutral-800 rounded-lg p-0.5">
-          <button
-            onClick={() => onViewChange('list')}
-            title="Log cards"
-            className={cn(
-              'w-7 h-7 flex items-center justify-center rounded-md transition-colors',
-              view === 'list'
-                ? 'bg-white dark:bg-neutral-700 text-slate-700 dark:text-slate-200 shadow-sm'
-                : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-            )}
-          >
-            <LayoutList size={14} strokeWidth={1.75} />
-          </button>
-          <button
-            onClick={() => onViewChange('network')}
-            title="Pipeline network"
-            className={cn(
-              'w-7 h-7 flex items-center justify-center rounded-md transition-colors',
-              view === 'network'
-                ? 'bg-white dark:bg-neutral-700 text-slate-700 dark:text-slate-200 shadow-sm'
-                : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
-            )}
-          >
-            <Network size={14} strokeWidth={1.75} />
-          </button>
+        {/* View tabs — same style as leads page */}
+        <div className="ml-auto flex items-center gap-0.5">
+          {VIEW_TABS.map(({ id, label, Icon: TabIcon }) => (
+            <button
+              key={id}
+              onClick={() => onViewChange(id)}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg transition-colors font-normal',
+                view === id
+                  ? 'bg-gray-100 dark:bg-zinc-800 text-slate-900 dark:text-slate-100'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800'
+              )}
+            >
+              <TabIcon size={14} />
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Stats row */}
-      {logs.length > 0 && (
+      {/* Stats row — only shown in list view */}
+      {view === 'list' && logs.length > 0 && (
         <div className="flex items-center gap-3 mt-2">
           <span className="text-xs text-slate-400 dark:text-slate-500">{logs.length} runs shown</span>
           <span className="text-slate-200">·</span>

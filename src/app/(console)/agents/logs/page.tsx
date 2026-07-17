@@ -12,6 +12,7 @@ import { AgentLogsHeader, type AgentView } from '@/components/agents/AgentLogsHe
 import { AgentCardGrid } from '@/components/agents/AgentCardGrid'
 import { AgentNetworkViz } from '@/components/agents/AgentNetworkViz'
 import { useAgentSelection } from '@/lib/agent-selection-context'
+import { TechnicalKanban } from '@/components/leads/TechnicalKanban'
 
 export default function AgentLogsPage() {
   const { activeAgent } = useAgentSelection()
@@ -56,7 +57,7 @@ export default function AgentLogsPage() {
             onViewChange={setView}
           />
 
-          {view === 'list' ? (
+          {view === 'list' && (
             <div className="flex-1 overflow-y-auto px-6 py-5">
               <AgentCardGrid
                 logs={logs}
@@ -66,7 +67,13 @@ export default function AgentLogsPage() {
                 onOpenLive={l => setLiveLog({ lead_id: l.lead_id, lead_name: l.lead_name })}
               />
             </div>
-          ) : (
+          )}
+          {view === 'kanban' && (
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              <TechnicalKanban />
+            </div>
+          )}
+          {view === 'network' && (
             <div className="flex-1 min-h-0 overflow-hidden">
               <AgentNetworkViz agents={allAgents} />
             </div>
