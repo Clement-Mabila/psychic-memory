@@ -273,6 +273,9 @@ export function TechnicalKanban() {
         <LeadDetailModal
           leadId={detailLeadId}
           onClose={() => setDetailLeadId(null)}
+          onRun={id => { runMutation.mutate(id); setDetailLeadId(null) }}
+          onRerun={(id, from) => { rerunMutation.mutate({ leadId: id, from }); setDetailLeadId(null) }}
+          onRunOnly={(id, agentType) => { runOnlyMutation.mutate({ leadId: id, agentType }); setDetailLeadId(null) }}
         />
       )}
 
